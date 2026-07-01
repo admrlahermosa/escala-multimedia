@@ -1,0 +1,2214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Escala">
+<meta name="theme-color" content="#8b5cf6">
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Escala Multimedia</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0c10;
+  --c1:#111116;
+  --c2:#18181f;
+  --c3:#1e1e28;
+  --c4:#26263a;
+  --bd:#2a2a3c;
+  --bd2:#3a3a55;
+  --tx:#eeeef5;
+  --t2:#9090a8;
+  --t3:#50506a;
+  --som:#f25f5c;
+  --proj:#f7b731;
+  --trs:#4ecdc4;
+  --ok:#50fa7b;
+  --acc:#8b5cf6;
+  --acc2:#a78bfa;
+  --nav-h:72px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%;overflow:hidden}
+body{
+  font-family:'Geist',sans-serif;background:var(--bg);color:var(--tx);
+  height:100%;overflow:hidden;position:fixed;width:100%;
+}
+
+/* ── SCREENS ── */
+.scr{position:absolute;inset:0;display:none;flex-direction:column}
+.scr.on{display:flex}
+
+/* ══════════════════════════════
+   LOGIN
+══════════════════════════════ */
+#s-login{
+  background:var(--bg);align-items:center;justify-content:center;
+  padding:32px 24px;overflow-y:auto;
+}
+#s-login::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 5%,rgba(139,92,246,.14) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 60% at 85% 95%,rgba(78,205,196,.08) 0%,transparent 60%);
+}
+.l-inner{width:100%;max-width:380px;position:relative;z-index:1}
+.l-logo{display:flex;align-items:center;gap:10px;margin-bottom:32px}
+.l-ico{
+  width:46px;height:46px;border-radius:13px;
+  background:linear-gradient(135deg,var(--acc),#6366f1);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  box-shadow:0 8px 24px rgba(139,92,246,.4);flex-shrink:0;
+}
+.l-brand{font-family:'Instrument Serif',serif;font-size:22px;line-height:1.1}
+.l-brand em{font-style:italic;color:var(--acc2)}
+.l-title{font-family:'Instrument Serif',serif;font-size:42px;line-height:1.05;color:#fff;margin-bottom:8px}
+.l-title em{font-style:italic;color:var(--acc2)}
+.l-sub{font-size:14px;color:var(--t2);margin-bottom:36px;line-height:1.6}
+
+.role-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px}
+.role-opt{
+  background:var(--c2);border:1.5px solid var(--bd);border-radius:14px;
+  padding:20px 14px;cursor:pointer;text-align:center;transition:all .2s;
+  -webkit-user-select:none;user-select:none;
+}
+.role-opt:active{transform:scale(.97)}
+.role-opt.sel{border-color:var(--acc);background:rgba(139,92,246,.1)}
+.role-opt-ico{font-size:28px;margin-bottom:8px}
+.role-opt-lbl{font-size:13px;font-weight:600;color:var(--t2)}
+.role-opt.sel .role-opt-lbl{color:var(--acc2)}
+
+.lf{display:none}.lf.on{display:block}
+.fld{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.fld label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3)}
+.inp{
+  background:var(--c2);border:1.5px solid var(--bd);color:var(--tx);
+  font-family:'Geist',sans-serif;font-size:16px;padding:14px 16px;
+  border-radius:12px;outline:none;transition:border-color .2s;width:100%;
+  -webkit-appearance:none;appearance:none;
+}
+.inp:focus{border-color:var(--acc)}
+.inp::placeholder{color:var(--t3)}
+select.inp{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2350506a' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+select.inp option{background:var(--c2)}
+
+/* BUTTONS */
+.btn{
+  font-family:'Geist',sans-serif;font-weight:600;font-size:15px;
+  padding:14px 22px;border-radius:12px;border:none;cursor:pointer;
+  transition:all .15s;display:inline-flex;align-items:center;
+  justify-content:center;gap:7px;white-space:nowrap;
+  -webkit-user-select:none;user-select:none;
+}
+.btn:active{transform:scale(.97)}
+.btn-pri{background:var(--acc);color:#fff}
+.btn-ok{background:var(--ok);color:#0c0c10;font-weight:700}
+.btn-gh{background:transparent;border:1.5px solid var(--bd);color:var(--t2);font-size:14px;padding:11px 18px}
+.btn-red{background:rgba(242,95,92,.12);border:1.5px solid rgba(242,95,92,.25);color:var(--som);font-size:13px;padding:10px 16px}
+.btn-sm{font-size:13px;padding:10px 16px}
+.btn-blk{width:100%}
+.ico-btn{
+  width:34px;height:34px;border-radius:9px;border:1.5px solid var(--bd);
+  background:var(--c3);display:inline-flex;align-items:center;justify-content:center;
+  font-size:14px;color:var(--t2);cursor:pointer;flex-shrink:0;transition:all .15s;
+}
+.ico-btn:active{transform:scale(.9)}
+
+/* ══════════════════════════════
+   APP SHELL — MOBILE
+══════════════════════════════ */
+#s-app{background:var(--bg)}
+
+/* TOP BAR */
+.topbar{
+  flex-shrink:0;
+  background:var(--c1);border-bottom:1px solid var(--bd);
+  padding:calc(var(--safe-t) + 12px) 18px 12px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  min-height:60px;
+}
+.topbar-title{font-family:'Instrument Serif',serif;font-size:22px;color:#fff;line-height:1}
+.topbar-title em{font-style:italic;color:var(--acc2)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.refresh-btn{
+  width:34px;height:34px;border-radius:10px;
+  border:1.5px solid var(--bd);background:var(--c2);
+  color:var(--t2);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;flex-shrink:0;
+}
+.refresh-btn:hover{border-color:var(--acc);color:var(--acc);background:rgba(139,92,246,.1)}
+.refresh-btn.spinning{animation:spin .7s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.user-pill{
+  display:flex;align-items:center;gap:8px;
+  background:var(--c2);border:1px solid var(--bd);
+  border-radius:30px;padding:6px 12px 6px 6px;cursor:pointer;
+}
+.user-av{
+  width:26px;height:26px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;font-family:'Instrument Serif',serif;
+}
+.user-name{font-size:12px;font-weight:600;color:var(--t2)}
+
+/* SCROLL AREA */
+.scroll-area{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px);
+}
+
+/* PULL TO REFRESH */
+.ptr-indicator{
+  position:absolute;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  height:0;overflow:hidden;
+  background:var(--c2);
+  font-size:12px;color:var(--t2);
+  transition:height .2s ease;
+  z-index:50;border-bottom:1px solid var(--bd);
+}
+.ptr-indicator.visible{height:52px}
+.ptr-spinner{font-size:20px;transition:transform .3s ease}
+.ptr-spinner.spinning{animation:spin .7s linear infinite}
+
+/* PAGES */
+.pg{display:none;padding:16px}
+.pg.on{display:block;animation:fu .22s ease}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* PAGE HEADER */
+.ph{margin-bottom:20px;padding-top:4px}
+.ph-eye{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.ph-title{font-family:'Instrument Serif',serif;font-size:30px;color:#fff;line-height:1;margin-bottom:4px}
+.ph-title em{font-style:italic;color:var(--acc2)}
+.ph-sub{font-size:13px;color:var(--t2);line-height:1.5}
+
+/* CARDS */
+.card{background:var(--c1);border:1px solid var(--bd);border-radius:14px;padding:18px;margin-bottom:12px}
+.ct{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-bottom:14px}
+
+/* STATS */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.sc{background:var(--c1);border:1px solid var(--bd);border-radius:14px;padding:18px 16px}
+.sc-n{font-family:'Instrument Serif',serif;font-size:36px;line-height:1;margin-bottom:3px}
+.sc-l{font-size:12px;color:var(--t2);font-weight:500}
+
+/* CHIPS */
+.chip{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:11px;font-weight:600;padding:4px 10px;
+  border-radius:20px;border:1.5px solid;white-space:nowrap;
+}
+.chip.som{color:var(--som);border-color:rgba(242,95,92,.3);background:rgba(242,95,92,.08)}
+.chip.proj{color:var(--proj);border-color:rgba(247,183,49,.3);background:rgba(247,183,49,.08)}
+.chip.trs{color:var(--trs);border-color:rgba(78,205,196,.3);background:rgba(78,205,196,.08)}
+
+/* CULTO CARD */
+.culto-card{
+  background:var(--c1);border:1px solid var(--bd);border-radius:14px;
+  margin-bottom:10px;overflow:hidden;
+}
+.cc-head{display:flex;gap:0}
+.cc-date{
+  background:var(--c3);padding:16px 14px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-width:62px;flex-shrink:0;
+}
+.cc-dn{font-family:'Instrument Serif',serif;font-size:28px;color:#fff;line-height:1}
+.cc-dm{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-top:4px}
+.cc-body{flex:1;padding:14px 14px 10px;min-width:0}
+.cc-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px}
+.cc-label{font-size:15px;font-weight:600;color:var(--tx);line-height:1.3}
+.cc-dia{font-size:12px;color:var(--t3);margin-bottom:10px}
+.cc-areas{display:flex;gap:6px;flex-wrap:wrap}
+.cc-act-row{display:flex;gap:6px;flex-shrink:0}
+
+/* VOL CARD */
+.vol-card{
+  background:var(--c1);border:1px solid var(--bd);border-radius:14px;
+  padding:16px;margin-bottom:10px;
+}
+.vc-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.vc-av{
+  width:44px;height:44px;border-radius:11px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Instrument Serif',serif;font-size:16px;font-weight:700;
+}
+.vc-info{flex:1;min-width:0}
+.vc-name{font-size:15px;font-weight:600;color:var(--tx);margin-bottom:2px}
+.vc-pin{font-size:11px;color:var(--t3);letter-spacing:.5px}
+.vc-obs{font-size:12px;color:var(--t2);font-style:italic;margin-top:5px;line-height:1.4}
+.vc-acts{display:flex;gap:5px;flex-shrink:0}
+.vc-chips{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ESCALA TABLE — mobile scroll */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px;border:1px solid var(--bd)}
+.etbl{width:100%;border-collapse:collapse;min-width:480px}
+.etbl th{
+  text-align:left;padding:11px 14px;font-size:10px;text-transform:uppercase;
+  letter-spacing:1px;color:var(--t3);border-bottom:1px solid var(--bd);font-weight:600;
+  background:var(--c1);white-space:nowrap;
+}
+.etbl td{padding:11px 14px;border-bottom:1px solid rgba(42,42,60,.6);vertical-align:middle;background:var(--c1)}
+.etbl tr:last-child td{border-bottom:none}
+.esel{
+  font-family:'Geist',sans-serif;font-size:13px;font-weight:500;
+  background:var(--c3);border:1.5px solid var(--bd);color:var(--tx);
+  padding:7px 10px;border-radius:9px;outline:none;cursor:pointer;min-width:120px;
+  -webkit-appearance:none;appearance:none;
+}
+.esel:focus{border-color:var(--acc)}
+
+/* AI BOX */
+.ai-box{
+  background:linear-gradient(135deg,#130a24,#0a1520);
+  border:1px solid rgba(139,92,246,.2);border-radius:14px;
+  padding:22px;margin-bottom:14px;position:relative;overflow:hidden;
+}
+.ai-box::before{
+  content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;
+  border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.15),transparent 70%);
+  pointer-events:none;
+}
+.ai-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);
+  border-radius:20px;padding:5px 13px;font-size:10px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--acc2);margin-bottom:12px;
+}
+.ai-dot{width:5px;height:5px;border-radius:50%;background:var(--ok);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.ai-h{font-family:'Instrument Serif',serif;font-size:24px;color:#fff;margin-bottom:6px}
+.ai-d{font-size:13px;color:rgba(255,255,255,.45);line-height:1.65;margin-bottom:18px}
+.ai-acts{display:flex;flex-direction:column;gap:8px}
+.lbar{height:2px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;display:none;margin-top:16px}
+.lbar.on{display:block}
+.lfill{height:100%;background:linear-gradient(90deg,var(--acc),var(--trs));animation:lmv 1.8s ease infinite}
+@keyframes lmv{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}width:60%}
+
+/* CALENDAR */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-hd{text-align:center;font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--t3);padding:6px 1px}
+.cal-cell{
+  background:var(--c2);border:1px solid var(--bd);border-radius:6px;
+  padding:5px 4px;min-height:64px;transition:all .15s;
+}
+.cal-cell.empty{background:transparent;border-color:transparent}
+.cal-cell.ev{border-color:var(--c4);cursor:pointer}
+.cal-cell.ev:active{background:var(--c3)}
+.cal-cell.tod{border-color:var(--acc)!important;border-width:2px}
+.cal-cell.excl{border-color:rgba(242,95,92,.3);background:rgba(242,95,92,.04);cursor:pointer}
+.cal-n{font-size:11px;font-weight:700;color:var(--t3);margin-bottom:3px;font-family:'Instrument Serif',serif}
+.cal-cell.ev .cal-n{color:var(--tx)}
+.ctag{font-size:7px;font-weight:600;padding:2px 3px;border-radius:3px;margin-bottom:2px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4}
+.ctag.lbl{background:var(--c3);color:var(--t2)}
+.ctag.som{background:rgba(242,95,92,.15);color:var(--som)}
+.ctag.proj{background:rgba(247,183,49,.15);color:var(--proj)}
+.ctag.trs{background:rgba(78,205,196,.15);color:var(--trs)}
+
+/* VOL HERO */
+.vh{
+  background:linear-gradient(135deg,var(--c2),#140e24);
+  border:1px solid var(--bd);border-radius:16px;padding:24px 20px;margin-bottom:14px;
+  position:relative;overflow:hidden;
+}
+.vh::before{content:'';position:absolute;bottom:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.1),transparent 70%)}
+.vh-av{width:52px;height:52px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:20px;font-weight:700;margin-bottom:12px}
+.vh-name{font-family:'Instrument Serif',serif;font-size:28px;color:#fff;line-height:1;margin-bottom:3px}
+.vh-month{font-size:13px;color:var(--t2);margin-bottom:12px}
+.vh-chips{display:flex;gap:7px;flex-wrap:wrap}
+
+.turn-card{
+  background:var(--c1);border:1px solid var(--bd);border-radius:14px;
+  padding:16px;display:flex;align-items:center;gap:14px;margin-bottom:10px;
+}
+.tc-date{background:var(--c3);border-radius:10px;width:48px;text-align:center;padding:9px 4px;flex-shrink:0}
+.tc-dn{font-family:'Instrument Serif',serif;font-size:24px;color:#fff;line-height:1}
+.tc-dm{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-top:2px}
+.tc-info{flex:1;min-width:0}
+.tc-lbl{font-size:14px;font-weight:600;color:var(--tx);margin-bottom:3px}
+.tc-area{font-size:12px;color:var(--t2)}
+.tc-area strong{color:var(--tx)}
+.tc-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+.tc-team{font-size:11px;color:var(--t2);margin-top:8px;padding-top:8px;border-top:1px solid var(--bd);line-height:1.6}
+.tc-team-item{color:var(--tx);font-weight:500}
+
+/* VOTACION */
+.vot-header-msg{
+  background:linear-gradient(135deg,#0f1f0a,#0a1a10);
+  border:1px solid rgba(80,250,123,.2);border-radius:var(--r);
+  padding:22px 20px;margin-bottom:12px;
+}
+.vot-msg-title{font-family:'Instrument Serif',serif;font-size:26px;color:#fff;font-weight:900;margin-bottom:12px}
+.vot-msg-body{font-size:13px;color:rgba(255,255,255,.65);line-height:1.8}
+.vot-msg-body strong{color:rgba(80,250,123,.9)}
+.vot-progress{background:var(--c1);border:1px solid var(--bd);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.vot-prog-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.vot-prog-label{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--t3)}
+.vot-prog-val{font-size:13px;font-weight:700;color:var(--tx)}
+.vot-prog-bar-bg{height:5px;background:var(--c4);border-radius:3px;overflow:hidden;margin-bottom:10px}
+.vot-prog-bar-fill{height:100%;background:linear-gradient(90deg,var(--ok),#38d968);border-radius:3px;transition:width .3s ease}
+.vot-prog-chips{display:flex;gap:6px;flex-wrap:wrap}
+.vot-pc{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px}
+.vot-pc.si{background:rgba(80,250,123,.12);color:var(--ok);border:1px solid rgba(80,250,123,.3)}
+.vot-pc.no{background:rgba(242,95,92,.12);color:var(--som);border:1px solid rgba(242,95,92,.3)}
+.vot-pc.pend{background:var(--c3);color:var(--t3);border:1px solid var(--bd)}
+.vot-bloque{
+  background:var(--c1);border:1px solid var(--bd);border-radius:var(--r);
+  padding:14px 16px;margin-bottom:8px;
+  display:flex;align-items:center;gap:12px;transition:border-color .2s;
+}
+.vot-bloque:hover{border-color:var(--bd2)}
+.vot-bloque-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+.vot-bloque-date{background:var(--c3);border-radius:9px;width:44px;flex-shrink:0;text-align:center;padding:7px 4px}
+.vot-bloque-dn{font-family:'Instrument Serif',serif;font-size:20px;color:#fff;line-height:1}
+.vot-bloque-dm{font-size:7px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-top:2px}
+.vot-bloque-info{flex:1;min-width:0}
+.vot-bloque-label{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px}
+.vot-bloque-dia{font-size:10px;color:var(--t3);margin-bottom:5px}
+.vot-bloque-areas{display:flex;gap:4px;flex-wrap:wrap}
+.vot-bloque-btns{display:flex;flex-direction:column;gap:5px;flex-shrink:0}
+.vot-yn{
+  font-family:'Geist',sans-serif;font-size:11px;font-weight:700;
+  padding:7px 14px;border-radius:8px;border:1.5px solid var(--bd);
+  background:var(--c3);color:var(--t2);cursor:pointer;
+  transition:all .15s;white-space:nowrap;min-width:58px;text-align:center;
+}
+.yn-si:hover{border-color:var(--ok);color:var(--ok);background:rgba(80,250,123,.08)}
+.yn-no:hover{border-color:var(--som);color:var(--som);background:rgba(242,95,92,.08)}
+.yn-active-si{border-color:var(--ok)!important;color:var(--ok)!important;background:rgba(80,250,123,.12)!important}
+.yn-active-no{border-color:var(--som)!important;color:var(--som)!important;background:rgba(242,95,92,.12)!important}
+
+/* VOTOS ADMIN */
+.vp{background:var(--c1);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:10px}
+.vp-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.vp-name{font-size:14px;font-weight:600;color:var(--tx);flex:1}
+.vp-cnt{font-size:11px;color:var(--t3)}
+.vp-days{display:flex;gap:5px;flex-wrap:wrap}
+.vp-day{font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;background:rgba(80,250,123,.1);border:1px solid rgba(80,250,123,.25);color:var(--ok)}
+.vp-day.nc{background:var(--c3);border-color:var(--bd);color:var(--t3)}
+.vp-emp{font-size:12px;color:var(--t3);font-style:italic}
+
+/* MONTH NAV */
+.mnav{display:flex;align-items:center;gap:10px}
+.mnav-lbl{font-family:'Instrument Serif',serif;font-size:20px;color:#fff;flex:1;text-align:center}
+
+/* BADGE */
+.badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
+/* TOGGLE SWITCH */
+.toggle-sw{position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;flex-shrink:0}
+.toggle-sw input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:var(--c4);border-radius:24px;transition:.2s;border:1.5px solid var(--bd)}
+.toggle-sw input:checked+.toggle-track{background:var(--acc);border-color:var(--acc)}
+.toggle-track::before{content:'';position:absolute;width:16px;height:16px;left:3px;top:50%;transform:translateY(-50%);background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.toggle-sw input:checked+.toggle-track::before{transform:translateY(-50%) translateX(20px)}
+.badge.ev{background:rgba(247,183,49,.12);color:var(--proj);border:1px solid rgba(247,183,49,.3)}
+.badge.open{background:rgba(80,250,123,.12);color:var(--ok);border:1px solid rgba(80,250,123,.3)}
+.badge.closed{background:var(--c3);color:var(--t3);border:1px solid var(--bd)}
+
+/* SK CHECKS */
+.sk-row{display:flex;gap:8px;flex-wrap:wrap}
+.sk{
+  display:flex;align-items:center;gap:5px;cursor:pointer;
+  font-size:13px;font-weight:500;padding:10px 14px;
+  border-radius:10px;border:1.5px solid var(--bd);
+  background:var(--c2);transition:all .15s;user-select:none;
+}
+.sk input{display:none}
+.sk.som:has(input:checked){border-color:var(--som);background:rgba(242,95,92,.08);color:var(--som)}
+.sk.proj:has(input:checked){border-color:var(--proj);background:rgba(247,183,49,.08);color:var(--proj)}
+.sk.trs:has(input:checked){border-color:var(--trs);background:rgba(78,205,196,.08);color:var(--trs)}
+
+/* RESUMEN */
+.res-list{display:flex;flex-direction:column;gap:8px}
+.res-card{background:var(--c2);border:1px solid var(--bd);border-radius:10px;padding:13px 14px;display:flex;align-items:center;gap:10px}
+.res-av{width:32px;height:32px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:12px;font-weight:700}
+.res-info{flex:1;min-width:0}
+.res-name{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:2px}
+.res-detail{font-size:11px;color:var(--t2)}
+
+/* ── BOTTOM NAV ── */
+.bnav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(17,17,22,.95);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--bd);
+  padding:8px 0 calc(8px + var(--safe-b));
+  display:flex;z-index:100;
+}
+.bn{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  gap:4px;padding:6px 4px;cursor:pointer;transition:all .15s;
+  border:none;background:none;color:var(--t3);
+  -webkit-user-select:none;user-select:none;
+}
+.bn:active{transform:scale(.92)}
+.bn.on{color:var(--acc2)}
+.bn-ico{font-size:22px;line-height:1}
+.bn-lbl{font-size:9px;font-weight:600;letter-spacing:.3px;text-transform:uppercase}
+
+/* MODAL */
+.ov{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  z-index:1000;display:none;align-items:flex-end;justify-content:center;
+  padding:0;
+}
+.ov.on{display:flex}
+.modal{
+  background:var(--c1);border:1px solid var(--bd2);
+  border-radius:20px 20px 0 0;padding:24px 20px;
+  width:100%;max-width:500px;
+  padding-bottom:calc(24px + var(--safe-b));
+  box-shadow:0 -24px 80px rgba(0,0,0,.6);
+  animation:slideUp .25s ease;max-height:90vh;overflow-y:auto;
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;border-radius:2px;background:var(--bd2);margin:0 auto 20px}
+.modal-h{font-family:'Instrument Serif',serif;font-size:22px;color:#fff;margin-bottom:20px}
+.modal-ft{display:flex;gap:8px;margin-top:20px;flex-direction:column}
+
+/* MISC */
+.gap{display:flex;gap:8px;flex-wrap:wrap}
+.mt{margin-top:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.f1{flex:1;min-width:0}
+.empty{text-align:center;padding:48px 20px;color:var(--t3)}
+.empty-ico{font-size:40px;margin-bottom:10px}
+.empty-txt{font-size:14px}
+.scale-raw{font-family:'Geist',monospace;font-size:11px;white-space:pre-wrap;line-height:1.9;color:var(--t2)}
+.divider{border:none;border-top:1px solid var(--bd);margin:14px 0}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:calc(var(--nav-h) + var(--safe-b) + 12px);left:50%;
+  transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--c2);border:1px solid var(--bd2);color:var(--tx);
+  font-size:13px;font-weight:500;padding:11px 22px;border-radius:30px;
+  z-index:9990;transition:all .28s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;pointer-events:none;box-shadow:0 8px 28px rgba(0,0,0,.5);
+}
+.toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+
+::-webkit-scrollbar{display:none}
+* {scrollbar-width:none}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+
+<!-- LOGIN -->
+<div class="scr on" id="s-login">
+  <div class="l-inner">
+    <div class="l-logo">
+      <div class="l-ico">🎛️</div>
+      <div class="l-brand">Escala <em>Multimedia</em></div>
+    </div>
+    <div class="l-title">Tu turno,<br><em>organizado.</em></div>
+    <div class="l-sub">Gestión de escala para el equipo de multimedia de la iglesia</div>
+
+    <div class="role-row">
+      <div class="role-opt" id="ro-adm" onclick="pickRole('adm')">
+        <div class="role-opt-ico">⚙️</div>
+        <div class="role-opt-lbl">Administrador</div>
+      </div>
+      <div class="role-opt" id="ro-vol" onclick="pickRole('vol')">
+        <div class="role-opt-ico">🙋</div>
+        <div class="role-opt-lbl">Voluntario</div>
+      </div>
+    </div>
+
+    <div class="lf" id="lf-adm">
+      <div class="fld"><label>Contraseña</label>
+        <input class="inp" type="password" id="inp-pass" placeholder="Contraseña de administrador" onkeydown="if(event.key==='Enter')doLoginAdm()">
+      </div>
+      <button class="btn btn-pri btn-blk" onclick="doLoginAdm()">Entrar como Administrador →</button>
+    </div>
+
+    <div class="lf" id="lf-vol">
+      <div class="fld"><label>Tu nombre</label>
+        <select class="inp" id="sel-vl"><option value="">— Selecciona tu nombre —</option></select>
+      </div>
+      <div class="fld"><label>PIN (4 dígitos)</label>
+        <input class="inp" type="password" inputmode="numeric" maxlength="4" id="inp-pin" placeholder="••••" onkeydown="if(event.key==='Enter')doLoginVol()">
+      </div>
+      <button class="btn btn-pri btn-blk" onclick="doLoginVol()">Ver mi escala →</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="scr" id="s-app">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="topbar-right">
+      <button class="refresh-btn" onclick="reloadApp()" title="Actualizar datos">↻</button>
+      <div class="user-pill" onclick="doLogout()">
+        <div class="user-av" id="usr-av"></div>
+        <div class="user-name" id="usr-nm">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PULL TO REFRESH -->
+  <div class="ptr-indicator" id="ptr">
+    <span class="ptr-spinner" id="ptr-spinner">↻</span>
+    <span id="ptr-text">Suelta para actualizar</span>
+  </div>
+
+  <!-- SCROLL AREA -->
+  <div class="scroll-area">
+
+    <!-- DASHBOARD -->
+    <div class="pg" id="pg-db">
+      <div class="ph"><div class="ph-eye">Panel principal</div><div class="ph-title">Dashboard</div></div>
+      <div class="sg" id="db-stats"></div>
+      <div class="card"><div class="ct">Próximos cultos</div><div id="db-next"></div></div>
+    </div>
+
+    <!-- VOLUNTARIOS -->
+    <div class="pg" id="pg-vols">
+      <div class="ph"><div class="ph-eye">Equipo</div><div class="ph-title">Voluntarios</div></div>
+      <button class="btn btn-pri btn-blk" onclick="openMV(null)" style="margin-bottom:14px">+ Agregar voluntario</button>
+      <div id="vgrid"></div>
+    </div>
+
+    <!-- CULTOS -->
+    <div class="pg" id="pg-cultos">
+      <div class="ph"><div class="ph-eye">Programación</div><div class="ph-title">Cultos</div></div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="mnav">
+          <button class="btn btn-gh btn-sm" onclick="shM(-1)">‹</button>
+          <div class="mnav-lbl" id="mnav-lbl">—</div>
+          <button class="btn btn-gh btn-sm" onclick="shM(1)">›</button>
+        </div>
+      </div>
+      <button class="btn btn-gh btn-blk" onclick="openME(null)" style="margin-bottom:14px">+ Agregar evento extra</button>
+      <div id="cultos-list"></div>
+    </div>
+
+    <!-- VOTACIONES ADMIN -->
+    <div class="pg" id="pg-votos">
+      <div class="ph"><div class="ph-eye">Disponibilidad</div><div class="ph-title"><em>Votaciones</em></div></div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="mnav" style="margin-bottom:14px">
+          <button class="btn btn-gh btn-sm" onclick="shM(-1)">‹</button>
+          <div class="mnav-lbl" id="votos-lbl">—</div>
+          <button class="btn btn-gh btn-sm" onclick="shM(1)">›</button>
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <span id="vot-badge"></span>
+          <span style="font-size:11px;color:var(--t2)" id="vot-auto-info"></span>
+        </div>
+        <div class="ct" style="margin-bottom:8px">Control de votación</div>
+        <div class="gap">
+          <button class="btn btn-sm" id="vbtn-auto" onclick="setVotMode(null)">🔄 Automático (25–fin de mes)</button>
+          <button class="btn btn-sm" id="vbtn-open" onclick="setVotMode('abierta')">🟢 Forzar abierta</button>
+          <button class="btn btn-sm" id="vbtn-closed" onclick="setVotMode('cerrada')">🔒 Forzar cerrada</button>
+        </div>
+      </div>
+      <div id="votos-list"></div>
+    </div>
+
+    <!-- GENERAR ESCALA -->
+    <div class="pg" id="pg-esc">
+      <div class="ph"><div class="ph-eye">Inteligencia artificial</div><div class="ph-title">Generar <em>Escala</em></div></div>
+      <div class="ai-box">
+        <div class="ai-pill"><div class="ai-dot"></div> Agente activo</div>
+        <div class="ai-h">Escala del mes</div>
+        <div class="ai-d">La IA analiza habilidades, restricciones y disponibilidad votada para distribuir los turnos de forma justa.</div>
+        <div class="ai-acts">
+          <button class="btn btn-ok btn-blk" onclick="genScale()">⚡ Generar ahora</button>
+          <button class="btn btn-gh btn-blk" onclick="copyWA()">📲 Copiar para WhatsApp</button>
+        </div>
+        <div class="lbar" id="lbar"><div class="lfill"></div></div>
+      </div>
+      <div id="esc-out" style="display:none">
+        <div class="card"><div class="ct">Escala — <span id="esc-mes"></span></div><div class="scale-raw" id="esc-raw"></div></div>
+        <div class="card mt"><div class="ct">Resumen por voluntario</div><div class="res-list" id="res-list"></div></div>
+        <button class="btn btn-gh btn-blk mt" onclick="navTo('pg-edit','Editar Escala')">✏️ Ajustar manualmente</button>
+      </div>
+    </div>
+
+
+    <!-- EDITAR ESCALA -->
+    <div class="pg" id="pg-edit">
+      <div class="ph"><div class="ph-eye">Edición manual</div><div class="ph-title">Editar <em>Escala</em></div></div>
+      <div class="tbl-wrap" style="margin-bottom:14px">
+        <table class="etbl">
+          <thead><tr>
+            <th>Fecha</th><th>Culto</th>
+            <th style="color:var(--som)">🎙 Som.</th>
+            <th style="color:var(--proj)">📽 Proy.</th>
+            <th style="color:var(--trs)">📡 Trans.</th>
+          </tr></thead>
+          <tbody id="etbl-body"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-ok btn-blk" onclick="saveManual()">💾 Guardar escala</button>
+        <button class="btn btn-gh btn-blk" onclick="copyWA()">📲 Copiar para WhatsApp</button>
+      </div>
+    </div>
+
+    <!-- CALENDARIO -->
+    <div class="pg" id="pg-cal">
+      <div class="ph"><div class="ph-eye">Vista mensual</div><div class="ph-title">Calendario</div></div>
+      <div class="card">
+        <div class="mnav" style="margin-bottom:14px">
+          <button class="btn btn-gh btn-sm" onclick="shM(-1)">‹</button>
+          <div class="mnav-lbl" id="cal-lbl">—</div>
+          <button class="btn btn-gh btn-sm" onclick="shM(1)">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+    </div>
+
+    <!-- MI ESCALA (vol) -->
+    <div class="pg" id="pg-me">
+      <div id="me-hero"></div>
+      <div id="me-turns"></div>
+    </div>
+
+    <!-- MI DISPONIBILIDAD (vol) -->
+    <div class="pg" id="pg-avail">
+      <div class="ph"><div class="ph-eye">Mi disponibilidad</div><div class="ph-title"><em>Votación</em></div></div>
+      <div id="avail-body"></div>
+    </div>
+
+    <!-- MI PERFIL (vol) -->
+    <div class="pg" id="pg-perfil">
+      <div class="ph"><div class="ph-eye">Ajustes</div><div class="ph-title"><em>Mi Perfil</em></div></div>
+      <div id="perfil-body"></div>
+    </div>
+
+    <!-- AJUSTES ADMIN -->
+    <div class="pg" id="pg-ajustes">
+      <div class="ph"><div class="ph-eye">Administrador</div><div class="ph-title"><em>Ajustes</em></div></div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="ct">Cambiar contraseña de administrador</div>
+        <div class="fld"><label>Contraseña actual</label><input class="inp" type="password" id="aj-pass-old" placeholder="••••••••"></div>
+        <div class="fld"><label>Nueva contraseña</label><input class="inp" type="password" id="aj-pass-new" placeholder="Mínimo 6 caracteres"></div>
+        <div class="fld"><label>Confirmar nueva contraseña</label><input class="inp" type="password" id="aj-pass-new2" placeholder="Repite la nueva contraseña"></div>
+        <button class="btn btn-ok btn-blk" onclick="changeAdminPass()">💾 Cambiar contraseña</button>
+      </div>
+      <div class="card">
+        <div class="ct">Información del sistema</div>
+        <div style="font-size:13px;color:var(--t2);line-height:2">
+          <div>🗄 Base de datos: <strong style="color:var(--tx)">Supabase</strong></div>
+          <div>🌐 Hosting: <strong style="color:var(--tx)">Netlify</strong></div>
+          <div>👥 Voluntarios: <strong style="color:var(--tx)" id="aj-vols-count">—</strong></div>
+          <div>📅 Cultos este mes: <strong style="color:var(--tx)" id="aj-cultos-count">—</strong></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /scroll-area -->
+
+  <!-- BOTTOM NAV (injected by JS) -->
+  <nav class="bnav" id="bnav"></nav>
+</div>
+
+<!-- MODAL VOL -->
+<div class="ov" id="ov-vol" onclick="if(event.target===this)closeOv('ov-vol')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-h" id="mv-title">Agregar voluntario</div>
+    <div class="fld"><label>Nombre completo</label><input class="inp" id="mv-name" type="text" placeholder="Ej: María González"></div>
+    <div class="fld"><label>PIN personal (4 dígitos)</label><input class="inp" id="mv-pin" type="number" min="1000" max="9999" placeholder="1234"></div>
+    <div class="fld"><label>Áreas</label>
+      <div class="sk-row">
+        <label class="sk som"><input type="checkbox" id="mv-som"> 🎙 Sonido</label>
+        <label class="sk proj"><input type="checkbox" id="mv-proj"> 📽 Proyector</label>
+        <label class="sk trs"><input type="checkbox" id="mv-trs"> 📡 Transmisión</label>
+      </div>
+    </div>
+    <div class="fld"><label>Observaciones para la IA</label><input class="inp" id="mv-obs" type="text" placeholder="Ej: No disponible lunes"></div>
+    <div class="modal-ft">
+      <button class="btn btn-pri btn-blk" onclick="saveVol()">Guardar</button>
+      <button class="btn btn-gh btn-blk" onclick="closeOv('ov-vol')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EVENTO -->
+<div class="ov" id="ov-ev" onclick="if(event.target===this)closeOv('ov-ev')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-h" id="mev-title">Evento especial</div>
+    <div class="fld"><label>Fecha</label><input class="inp" type="date" id="mev-date"></div>
+    <div class="fld"><label>Descripción</label><input class="inp" type="text" id="mev-desc" placeholder="Ej: Conferencia de jóvenes"></div>
+    <div class="fld"><label>Áreas</label>
+      <div class="sk-row">
+        <label class="sk som"><input type="checkbox" id="mev-som" checked> 🎙 Sonido</label>
+        <label class="sk proj"><input type="checkbox" id="mev-proj" checked> 📽 Proyector</label>
+        <label class="sk trs"><input type="checkbox" id="mev-trs"> 📡 Transmisión</label>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-pri btn-blk" onclick="saveEvento()">Guardar</button>
+      <button class="btn btn-gh btn-blk" onclick="closeOv('ov-ev')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DÍA -->
+<div class="ov" id="ov-dia" onclick="if(event.target===this)closeOv('ov-dia')">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-h" id="mdia-h">Editar día</div>
+    <div id="mdia-body"></div>
+    <div class="modal-ft">
+      <button class="btn btn-red btn-sm" onclick="delDay()">🗑 Eliminar día</button>
+      <button class="btn btn-gh btn-sm" onclick="closeOv('ov-dia')">Cancelar</button>
+      <button class="btn btn-ok btn-sm" onclick="saveDay()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════
+//  SUPABASE CONNECTION
+// ════════════════════════
+const SB_URL = 'https://zbvenvplwbqsanczmmpq.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpidmVudnBsd2Jxc2FuY3ptbXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3MTU5MzAsImV4cCI6MjA5NzI5MTkzMH0.pjO9Dyvn0QZA8OKD8KlYT_diApMpTIs7f0NkHf2aSMw';
+const GROQ_KEY = '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';
+const SB_HEADERS = {
+  'apikey': SB_KEY,
+  'Authorization': `Bearer ${SB_KEY}`,
+  'Content-Type': 'application/json',
+};
+
+async function sbGet(table, query=''){
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?${query}`, { headers: SB_HEADERS });
+  if(!res.ok) throw new Error(`Error leyendo ${table}: ${res.status}`);
+  return res.json();
+}
+async function sbInsert(table, rows){
+  const res = await fetch(`${SB_URL}/rest/v1/${table}`, {
+    method:'POST', headers:{...SB_HEADERS,'Prefer':'return=representation'}, body: JSON.stringify(rows)
+  });
+  if(!res.ok) throw new Error(`Error insertando en ${table}: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+async function sbUpsert(table, rows, onConflict){
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?on_conflict=${onConflict}`, {
+    method:'POST', headers:{...SB_HEADERS,'Prefer':'resolution=merge-duplicates,return=representation'}, body: JSON.stringify(rows)
+  });
+  if(!res.ok) throw new Error(`Error guardando en ${table}: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+async function sbUpdate(table, match, patch){
+  const qs = Object.entries(match).map(([k,v])=>`${k}=eq.${v}`).join('&');
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?${qs}`, {
+    method:'PATCH',
+    headers:{...SB_HEADERS,'Prefer':'return=minimal'},
+    body: JSON.stringify(patch)
+  });
+  if(!res.ok){
+    const txt=await res.text();
+    throw new Error(`Error actualizando ${table}: ${res.status} ${txt}`);
+  }
+  return true;
+}
+async function sbDelete(table, match){
+  const qs = Object.entries(match).map(([k,v])=>`${k}=eq.${v}`).join('&');
+  const res = await fetch(`${SB_URL}/rest/v1/${table}?${qs}`, { method:'DELETE', headers: SB_HEADERS });
+  if(!res.ok) throw new Error(`Error eliminando en ${table}: ${res.status} ${await res.text()}`);
+}
+
+const PASS='admin123';
+const MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DC=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const DF=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const AVC=['#8b5cf6','#f25f5c','#4ecdc4','#50fa7b','#f7b731','#74c0fc','#f783ac','#a9e34b'];
+
+let S={
+  role:null,me:null,
+  month:new Date().getMonth(),year:new Date().getFullYear(),
+  vols:[],extras:[],scale:[],avail:{},votOpen:false,votOverride:null,
+  excluidos:[], // días excluidos del calendario [{d,m,y}]
+  editVId:null,editEvId:null,editDayKey:null,
+  loaded:false,
+};
+
+// Detecta si HOY cae en la ventana automática de votación (día 25 al último día del mes)
+function isAutoVotingDay(){
+  const today=new Date();
+  const d=today.getDate();
+  const lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+  const start=Math.min(25,lastDay-1); // por seguridad en meses cortos
+  return d>=start;
+}
+// Estado real de la votación: override manual del admin tiene prioridad si está activo
+function votacionEstaAbierta(){
+  if(S.votOverride==='abierta') return true;
+  if(S.votOverride==='cerrada') return false;
+  return isAutoVotingDay();
+}
+
+// ── CARGA INICIAL DESDE SUPABASE ──
+async function sbGetSafe(table, query='', fallback=[]){
+  try{ return await sbGet(table, query); }
+  catch(e){ console.warn(`Error cargando ${table}:`, e); return fallback; }
+}
+
+async function ld(){
+  try{
+    // Carga independiente — si una tabla falla no rompe las demás
+    const [vols, extras, escalaRows, dispRows, cfgRows, exclRows] = await Promise.all([
+      sbGetSafe('voluntarios','select=*&order=id.asc', []),
+      sbGetSafe('eventos_extra','select=*', []),
+      sbGetSafe('escala','select=*', []),
+      sbGetSafe('disponibilidad','select=*', []),
+      sbGetSafe('config','select=*', []),
+      sbGetSafe('dias_excluidos','select=*', []),
+    ]);
+
+    S.vols = vols.map(v=>({
+      id:v.id, name:v.name, pin:v.pin, skills:v.skills||[], obs:v.obs||'',
+      avatar:v.avatar||'', notifOpen:v.notifOpen||false, notifClose:v.notifClose||false
+    }));
+    S.extras = extras.map(e=>({id:e.id, date:e.date, desc:e.descripcion, areas:e.areas||[]}));
+    S.scale  = escalaRows.map(s=>({
+      d:s.dia, m:s.mes, y:s.anio,
+      som:s.som||'', proj:s.proj||'', trs:s.trs||'',
+      label:s.label||'', areas:s.areas||[]
+    }));
+    S.avail  = {};
+    dispRows.forEach(r=>{ S.avail[`${r.voluntario_id}-${r.mes}-${r.anio}`] = r.dias||[]; });
+    const cfgMap={}; cfgRows.forEach(c=>cfgMap[c.key]=c.value);
+    S.votOverride = cfgMap.votOverride ?? null;
+    S.excluidos = exclRows.map(r=>({id:r.id, d:r.dia, m:r.mes, y:r.anio}));
+    S.loaded = true;
+  }catch(e){
+    console.error('Error crítico cargando Supabase:', e);
+    S.loaded = false;
+    showConexionError();
+  }
+}
+
+function showConexionError(){
+  const t=document.getElementById('toast');
+  t.innerHTML='⚠️ Sin conexión — <button onclick="retryLoad()" style="background:none;border:none;color:var(--ok);font-weight:700;cursor:pointer;text-decoration:underline">Reintentar</button>';
+  t.classList.add('on');
+}
+
+async function reloadApp(){
+  const btn=document.querySelector('.refresh-btn');
+  if(btn) btn.classList.add('spinning');
+  await ld();
+  if(btn) btn.classList.remove('spinning');
+  const pg=document.querySelector('.pg.on');
+  if(pg){
+    if(pg.id==='pg-db')    renderDB();
+    if(pg.id==='pg-vols')  renderVols();
+    if(pg.id==='pg-cultos')renderCultos();
+    if(pg.id==='pg-votos') renderVotos();
+    if(pg.id==='pg-edit')  renderEdit();
+    if(pg.id==='pg-cal')   renderCal();
+    if(pg.id==='pg-me')    renderMe();
+    if(pg.id==='pg-avail') renderAvail();
+  }
+  toast('✅ Datos actualizados');
+}
+
+async function retryLoad(){
+  const t=document.getElementById('toast');
+  t.textContent='🔄 Reconectando...';
+  await ld();
+  if(S.loaded){
+    t.classList.remove('on');
+    toast('✅ Conectado');
+    const pg=document.querySelector('.pg.on');
+    if(pg){
+      if(pg.id==='pg-db')    renderDB();
+      if(pg.id==='pg-vols')  renderVols();
+      if(pg.id==='pg-cultos')renderCultos();
+      if(pg.id==='pg-votos') renderVotos();
+      if(pg.id==='pg-me')    renderMe();
+      if(pg.id==='pg-avail') renderAvail();
+    }
+    if(document.getElementById('lf-vol').classList.contains('on')) pickRole('vol');
+  } else {
+    showConexionError();
+  }
+}
+
+// sv() ya no se usa de forma global — cada acción guarda directo en Supabase
+// Se mantiene como no-op por compatibilidad con llamadas existentes.
+function sv(){ /* persistencia ahora es por-acción vía funciones sb* */ }
+
+function getCultosRange(y,m,startD,endD){
+  // Genera cultos para el rango [startD, endD] de fecha absoluta (Date objects)
+  const r=[];
+  let cur=new Date(startD);
+  while(cur<=endD){
+    const dow=cur.getDay();
+    const d=cur.getDate(), curM=cur.getMonth(), curY=cur.getFullYear();
+    const wk=Math.floor((d-1)/7);
+    const dt=new Date(cur);
+    if(dow===1)r.push({date:dt,label:'Culto de Oración',dia:'Lunes',areas:['som'],type:'lun'});
+    if(dow===2)r.push({date:dt,label:'Culto Regular',dia:'Martes',areas:['som','proj','trs'],type:'mar'});
+    if(dow===0)r.push({date:dt,label:'Culto Dominical',dia:'Domingo',areas:['som','proj','trs'],type:'dom'});
+    if(dow===6){
+      if(wk===0)       r.push({date:dt,label:'Primer Sábado',dia:'Sábado',areas:['som','trs'],type:'sab1'});
+      else if(wk%2===1)r.push({date:dt,label:'Sábado Quincenal',dia:'Sábado',areas:['som','proj'],type:'sab15'});
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+  return r;
+}
+
+function getCultos(y,m){
+  const startD=new Date(y,m,1);
+  let nm=m+1,ny=y; if(nm>11){nm=0;ny++;}
+  const endD=new Date(ny,nm,7);
+  let r=getCultosRange(y,m,startD,endD);
+
+  S.extras.forEach(e=>{
+    const ed=new Date(e.date+'T12:00');
+    if(ed>=startD&&ed<=endD)
+      r.push({date:ed,label:e.desc||'Evento',dia:DF[ed.getDay()],areas:e.areas||['som','proj'],type:'ev',isExtra:true,exId:e.id});
+  });
+
+  // Filtrar días excluidos
+  const exclSet=new Set(S.excluidos.map(e=>`${e.d}-${e.m}-${e.y}`));
+  r=r.filter(c=>{
+    const k=`${c.date.getDate()}-${c.date.getMonth()}-${c.date.getFullYear()}`;
+    return !exclSet.has(k);
+  });
+
+  r.sort((a,b)=>a.date-b.date);
+  return r;
+}
+
+function aico(a){return a==='som'?'🎙':a==='proj'?'📽':'📡'}
+function aname(a){return a==='som'?'Sonido':a==='proj'?'Proyector':'Transmisión'}
+function achip(a){return `<span class="chip ${a}">${aico(a)} ${aname(a)}</span>`}
+function avC(id){return AVC[id%AVC.length]}
+function avI(name){return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+function avEl(v,sz=44,rd=11){
+  const c=avC(v.id%AVC.length);
+  if(v.avatar) return `<img src="${v.avatar}" style="width:${sz}px;height:${sz}px;border-radius:${rd}px;object-fit:cover;border:2px solid ${c}40;flex-shrink:0">`;
+  return `<div style="width:${sz}px;height:${sz}px;border-radius:${rd}px;background:${c}20;color:${c};border:2px solid ${c}40;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:${Math.round(sz*.35)}px;font-weight:700;flex-shrink:0">${avI(v.name)}</div>`;
+}
+
+// ── AUTH ──
+function pickRole(r){
+  document.getElementById('ro-adm').classList.toggle('sel',r==='adm');
+  document.getElementById('ro-vol').classList.toggle('sel',r==='vol');
+  document.getElementById('lf-adm').classList.toggle('on',r==='adm');
+  document.getElementById('lf-vol').classList.toggle('on',r==='vol');
+  if(r==='vol'){
+    if(!S.loaded){toast('🔄 Aún cargando datos, espera un segundo…');}
+    const s=document.getElementById('sel-vl');
+    s.innerHTML='<option value="">— Selecciona tu nombre —</option>';
+    S.vols.forEach(v=>s.innerHTML+=`<option value="${v.id}">${v.name}</option>`);
+  }
+}
+function doLoginAdm(){
+  if(document.getElementById('inp-pass').value===PASS){S.role='adm';enterApp();}
+  else{toast('❌ Contraseña incorrecta');document.getElementById('inp-pass').value='';}
+}
+function doLoginVol(){
+  const vid=document.getElementById('sel-vl').value;
+  const pin=document.getElementById('inp-pin').value.trim();
+  if(!vid){toast('⚠️ Selecciona tu nombre');return;}
+  const v=S.vols.find(x=>x.id==vid);
+  if(!v||String(v.pin)!==pin){toast('❌ PIN incorrecto');document.getElementById('inp-pin').value='';return;}
+  S.role='vol';S.me=v;
+  osLoginVol(v.id); // registrar en OneSignal
+  enterApp();
+}
+function enterApp(){
+  document.getElementById('s-login').classList.remove('on');
+  document.getElementById('s-app').classList.add('on');
+  buildNav();
+  if(S.role==='adm'){navTo('pg-db','Dashboard');renderDB();}
+  else{navTo('pg-me','Mi Escala');renderMe();setTimeout(checkNotifTriggers,800);}
+}
+function doLogout(){
+  if(!confirm('¿Cerrar sesión?'))return;
+  S.role=null;S.me=null;
+  document.getElementById('s-app').classList.remove('on');
+  document.getElementById('s-login').classList.add('on');
+  document.getElementById('inp-pass').value='';
+  document.getElementById('inp-pin').value='';
+  ['ro-adm','ro-vol'].forEach(x=>document.getElementById(x).classList.remove('sel'));
+  ['lf-adm','lf-vol'].forEach(x=>document.getElementById(x).classList.remove('on'));
+}
+
+// ── BOTTOM NAV ──
+const ADM_TABS=[
+  {id:'pg-db',   ico:'📊',lbl:'Inicio'},
+  {id:'pg-vols', ico:'👥',lbl:'Equipo'},
+  {id:'pg-cultos',ico:'📅',lbl:'Cultos'},
+  {id:'pg-votos',ico:'🗳️',lbl:'Votos'},
+  {id:'pg-esc',  ico:'✨',lbl:'Escala'},
+];
+const VOL_TABS=[
+  {id:'pg-me',   ico:'📋',lbl:'Mi Escala'},
+  {id:'pg-avail',ico:'🗳️',lbl:'Disponibilidad'},
+  {id:'pg-perfil',ico:'⚙️',lbl:'Perfil'},
+];
+function buildNav(){
+  const tabs=S.role==='adm'?ADM_TABS:VOL_TABS;
+  document.getElementById('bnav').innerHTML=tabs.map(t=>
+    `<button class="bn" id="bn-${t.id}" data-id="${t.id}" onclick="navTo('${t.id}','${t.lbl}')">
+      <span class="bn-ico">${t.ico}</span>
+      <span class="bn-lbl">${t.lbl}</span>
+    </button>`).join('');
+}
+function navTo(id,title){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.bn').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
+  document.getElementById(id).classList.add('on');
+  document.getElementById('topbar-title').textContent=title||id;
+  // Set user pill
+  const v=S.role==='adm'?{id:0,name:'Admin'}:S.me;
+  const c=avC(v.id%AVC.length);
+  document.getElementById('usr-av').style.cssText=`width:26px;height:26px;border-radius:50%;background:${c}20;color:${c};border:1.5px solid ${c}40;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:'Instrument Serif',serif`;
+  document.getElementById('usr-av').textContent=avI(v.name);
+  document.getElementById('usr-nm').textContent=S.role==='adm'?'Admin':S.me?.name.split(' ')[0];
+  // Render
+  if(id==='pg-db')    renderDB();
+  if(id==='pg-vols')  renderVols();
+  if(id==='pg-cultos')renderCultos();
+  if(id==='pg-votos') renderVotos();
+  if(id==='pg-edit')  renderEdit();
+  if(id==='pg-cal')   renderCal();
+  if(id==='pg-me')    renderMe();
+  if(id==='pg-avail') renderAvail();
+  if(id==='pg-perfil')renderPerfil();
+  document.querySelector('.scroll-area').scrollTop=0;
+}
+
+// ── MONTH ──
+function shM(d){
+  S.month+=d;
+  if(S.month<0){S.month=11;S.year--;}
+  if(S.month>11){S.month=0;S.year++;}
+  sv();
+  const pg=document.querySelector('.pg.on');if(!pg)return;
+  if(pg.id==='pg-cultos')renderCultos();
+  if(pg.id==='pg-cal')   renderCal();
+  if(pg.id==='pg-votos') renderVotos();
+  if(pg.id==='pg-db')    renderDB();
+}
+
+// ── DASHBOARD ──
+function renderDB(){
+  const cultos=getCultos(S.year,S.month);
+  const tot=cultos.reduce((s,c)=>s+c.areas.length,0);
+  const voteCount=S.vols.filter(v=>S.avail[`${v.id}-${S.month}-${S.year}`]?.length>0).length;
+  document.getElementById('db-stats').innerHTML=`
+    <div class="sc"><div class="sc-n" style="color:var(--acc2)">${S.vols.length}</div><div class="sc-l">Voluntarios</div></div>
+    <div class="sc"><div class="sc-n" style="color:var(--som)">${cultos.length}</div><div class="sc-l">Cultos en ${MES[S.month]}</div></div>
+    <div class="sc"><div class="sc-n" style="color:var(--ok)">${tot}</div><div class="sc-l">Turnos totales</div></div>
+    <div class="sc"><div class="sc-n" style="color:var(--proj)">${voteCount}</div><div class="sc-l">Votos recibidos</div></div>`;
+  const today=new Date();
+  const next=cultos.filter(c=>c.date>=today).slice(0,4);
+  document.getElementById('db-next').innerHTML=next.length
+    ?next.map(c=>ccHTML(c,false)).join('')
+    :'<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No hay cultos próximos.</div></div>';
+}
+
+// ── CULTO CARD ──
+function ccHTML(c,acts=true){
+  return `<div class="culto-card">
+    <div class="cc-head">
+      <div class="cc-date"><div class="cc-dn">${c.date.getDate()}</div><div class="cc-dm">${MES[c.date.getMonth()].slice(0,3)}</div></div>
+      <div class="cc-body">
+        <div class="cc-top-row">
+          <div>
+            <div class="cc-label">${c.label}${c.isExtra?` <span class="badge ev">Evento</span>`:''}</div>
+            <div class="cc-dia">${c.dia}</div>
+          </div>
+          ${acts&&c.isExtra?`<div class="cc-act-row">
+            <button class="ico-btn" onclick="openME(${c.exId})">✏️</button>
+            <button class="ico-btn" onclick="delExtra(${c.exId})">🗑</button>
+          </div>`:''}
+        </div>
+        <div class="cc-areas">${c.areas.map(a=>achip(a)).join('')}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── VOLUNTARIOS ──
+function openMV(id){
+  S.editVId=id;const v=id?S.vols.find(x=>x.id===id):null;
+  document.getElementById('mv-title').textContent=v?'Editar voluntario':'Agregar voluntario';
+  document.getElementById('mv-name').value=v?.name||'';
+  document.getElementById('mv-pin').value=v?.pin||'';
+  document.getElementById('mv-obs').value=v?.obs||'';
+  document.getElementById('mv-som').checked=v?.skills.includes('som')||false;
+  document.getElementById('mv-proj').checked=v?.skills.includes('proj')||false;
+  document.getElementById('mv-trs').checked=v?.skills.includes('trs')||false;
+  openOv('ov-vol');
+}
+async function saveVol(){
+  const name=document.getElementById('mv-name').value.trim();
+  const pin=document.getElementById('mv-pin').value.trim();
+  if(!name){toast('⚠️ Ingresa un nombre');return;}
+  if(!pin||pin.length<4){toast('⚠️ PIN de 4 dígitos');return;}
+  const skills=[];
+  if(document.getElementById('mv-som').checked)skills.push('som');
+  if(document.getElementById('mv-proj').checked)skills.push('proj');
+  if(document.getElementById('mv-trs').checked)skills.push('trs');
+  if(!skills.length){toast('⚠️ Selecciona al menos un área');return;}
+  const obs=document.getElementById('mv-obs').value.trim();
+  try{
+    if(S.editVId){
+      await sbUpdate('voluntarios',{id:S.editVId},{name,pin,skills,obs});
+      const i=S.vols.findIndex(v=>v.id===S.editVId);
+      if(i>=0)S.vols[i]={...S.vols[i],name,pin,skills,obs};
+      toast('✅ Voluntario actualizado');
+    }else{
+      const [row]=await sbInsert('voluntarios',[{name,pin,skills,obs}]);
+      S.vols.push({id:row.id,name,pin,skills,obs});
+      toast('✅ '+name+' agregado');
+    }
+    closeOv('ov-vol');renderVols();
+  }catch(e){console.error(e);toast('❌ Error guardando voluntario');}
+}
+async function delVol(id){
+  if(!confirm('¿Eliminar este voluntario?'))return;
+  try{
+    await sbDelete('voluntarios',{id});
+    S.vols=S.vols.filter(v=>v.id!==id);
+    renderVols();toast('🗑 Eliminado');
+  }catch(e){console.error(e);toast('❌ Error eliminando');}
+}
+function renderVols(){
+  const g=document.getElementById('vgrid');
+  if(!S.vols.length){g.innerHTML='<div class="empty"><div class="empty-ico">👤</div><div class="empty-txt">Agrega tu primer voluntario.</div></div>';return;}
+  g.innerHTML=S.vols.map(v=>`
+    <div class="vol-card">
+      <div class="vc-head">
+        ${avEl(v)}
+        <div class="vc-info">
+          <div class="vc-name">${v.name}</div>
+          <div class="vc-pin">PIN: ${'•'.repeat(4)}</div>
+          ${v.obs?`<div class="vc-obs">💬 ${v.obs}</div>`:''}
+        </div>
+        <div class="vc-acts">
+          <button class="ico-btn" onclick="openMV(${v.id})">✏️</button>
+          <button class="ico-btn" onclick="delVol(${v.id})">🗑</button>
+        </div>
+      </div>
+      <div class="vc-chips">${v.skills.map(a=>achip(a)).join('')}</div>
+    </div>`).join('');
+}
+
+// ── EVENTOS ──
+function openME(id){
+  S.editEvId=id;const e=id?S.extras.find(x=>x.id===id):null;
+  document.getElementById('mev-title').textContent=e?'Editar evento':'Evento especial';
+  document.getElementById('mev-date').value=e?.date||'';
+  document.getElementById('mev-desc').value=e?.desc||'';
+  document.getElementById('mev-som').checked=e?e.areas.includes('som'):true;
+  document.getElementById('mev-proj').checked=e?e.areas.includes('proj'):true;
+  document.getElementById('mev-trs').checked=e?e.areas.includes('trs'):false;
+  openOv('ov-ev');
+}
+async function saveEvento(){
+  const date=document.getElementById('mev-date').value;
+  if(!date){toast('⚠️ Selecciona una fecha');return;}
+  const areas=[];
+  if(document.getElementById('mev-som').checked)areas.push('som');
+  if(document.getElementById('mev-proj').checked)areas.push('proj');
+  if(document.getElementById('mev-trs').checked)areas.push('trs');
+  if(!areas.length){toast('⚠️ Selecciona al menos un área');return;}
+  const desc=document.getElementById('mev-desc').value.trim()||'Evento especial';
+  try{
+    if(S.editEvId){
+      await sbUpdate('eventos_extra',{id:S.editEvId},{date,descripcion:desc,areas});
+      const i=S.extras.findIndex(e=>e.id===S.editEvId);
+      if(i>=0)S.extras[i]={...S.extras[i],date,desc,areas};
+      toast('✅ Evento actualizado');
+    }else{
+      const [row]=await sbInsert('eventos_extra',[{date,descripcion:desc,areas}]);
+      S.extras.push({id:row.id,date,desc,areas});
+      toast('✅ Evento agregado');
+    }
+    closeOv('ov-ev');renderCultos();
+  }catch(e){console.error(e);toast('❌ Error guardando evento');}
+}
+async function delExtra(id){
+  try{
+    await sbDelete('eventos_extra',{id});
+    S.extras=S.extras.filter(e=>e.id!==id);
+    renderCultos();renderCal();toast('🗑 Eliminado');
+  }catch(e){console.error(e);toast('❌ Error eliminando');}
+}
+function renderCultos(){
+  document.getElementById('mnav-lbl').textContent=`${MES[S.month]} ${S.year}`;
+  const cultos=getCultos(S.year,S.month);
+  document.getElementById('cultos-list').innerHTML=cultos.length
+    ?cultos.map(c=>ccHTML(c,true)).join('')
+    :'<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No hay cultos este mes.</div></div>';
+}
+
+// ── VOTACIONES ──
+async function setVotMode(mode){
+  S.votOverride=mode;renderVotos();
+  try{
+    await sbUpsert('config',[{key:'votOverride',value:mode}],'key');
+  }catch(e){console.error(e);}
+
+  // Notificación push a todos los voluntarios
+  const abierta=votacionEstaAbierta();
+  let nm=S.month+1,ny=S.year;if(nm>11){nm=0;ny++;}
+  if(abierta){
+    await osSendToAll(
+      '🗳️ ¡Votación abierta!',
+      `Ya puedes marcar tu disponibilidad para ${MES[nm]} ${ny}. ¡Hazlo antes de que cierre!`
+    );
+  }
+
+  const labels={null:'🔄 Modo automático activado',abierta:'🟢 Votación abierta — notificación enviada',cerrada:'🔒 Votación cerrada'};
+  toast(labels[mode===null?'null':mode]||labels[mode]);
+}
+function renderVotos(){
+  document.getElementById('votos-lbl').textContent=`${MES[S.month]} ${S.year}`;
+  const abierta=votacionEstaAbierta();
+  document.getElementById('vot-badge').innerHTML=abierta
+    ?'<span class="badge open">Abierta</span>'
+    :'<span class="badge closed">Cerrada</span>';
+  document.getElementById('vot-auto-info').textContent=isAutoVotingDay()
+    ?'(hoy cae en ventana automática 25–fin de mes)'
+    :'(hoy fuera de ventana automática)';
+  ['vbtn-auto','vbtn-open','vbtn-closed'].forEach(id=>document.getElementById(id).classList.remove('btn-pri'));
+  ['vbtn-auto','vbtn-open','vbtn-closed'].forEach(id=>document.getElementById(id).classList.add('btn-gh'));
+  const activeId=S.votOverride===null?'vbtn-auto':S.votOverride==='abierta'?'vbtn-open':'vbtn-closed';
+  document.getElementById(activeId).classList.remove('btn-gh');
+  document.getElementById(activeId).classList.add('btn-pri');
+
+  const cultos=getCultos(S.year,S.month).filter(c=>c.date.getMonth()===S.month);
+  const sm=scaleMap();
+  const cultoDays=new Set(cultos.map(c=>c.date.getDate()));
+  const list=document.getElementById('votos-list');
+
+  // ── Sección cultos con editar/eliminar ──
+  const cultosHTML=`
+    <div class="card" style="margin-bottom:14px">
+      <div class="ct">Cultos del mes — edita o elimina días</div>
+      ${cultos.map(c=>{
+        const key=cKey(c);
+        const entry=sm[key];
+        const label=entry?.label||c.label;
+        return `<div class="culto-card" style="margin-bottom:6px">
+          <div class="cc-top">
+            <div class="cc-date">
+              <div class="cc-dn">${c.date.getDate()}</div>
+              <div class="cc-dm">${MES[c.date.getMonth()].slice(0,3)}</div>
+            </div>
+            <div class="cc-body">
+              <div class="cc-label">${label}${c.isExtra?` <span class="badge ev">Evento</span>`:''}</div>
+              <div class="cc-dia">${c.dia}</div>
+              <div class="cc-areas">${(entry?.areas||c.areas).map(a=>achip(a)).join('')}</div>
+            </div>
+            <div class="cc-actions">
+              <button class="ico-btn e" title="Editar día" onclick="openDay('${key}')">✏️</button>
+              <button class="ico-btn d" title="Eliminar día" onclick="delDayByKey('${key}')">🗑</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  // ── Sección votos por voluntario ──
+  const votosHTML=S.vols.length?S.vols.map(v=>{
+    const key=`${v.id}-${S.month}-${S.year}`;
+    const days=S.avail[key]||[];
+    const siDays=days.filter(d=>d>0);
+    const noDays=days.filter(d=>d<0);
+    const withCulto=siDays.filter(d=>cultoDays.has(d)).length;
+    return `<div class="vp">
+      <div class="vp-head">
+        ${avEl(v,32,8)}
+        <div class="vp-name">${v.name}</div>
+        <div class="vp-cnt">${siDays.length} Sí · ${noDays.length} No · ${withCulto} disponible con culto</div>
+      </div>
+      <div class="vp-days">
+        ${days.length
+          ?days.sort((a,b)=>Math.abs(a)-Math.abs(b)).map(d=>
+            `<span class="vp-day${d<0?' nc':''}">${d>0?'✓':'✗'} ${Math.abs(d)}</span>`
+          ).join('')
+          :`<span class="vp-emp">Sin votar aún</span>`}
+      </div>
+    </div>`;
+  }).join(''):'<div class="empty"><div class="empty-ico">👥</div><div class="empty-txt">No hay voluntarios.</div></div>';
+
+  list.innerHTML=cultosHTML+votosHTML;
+}
+
+// Eliminar día directo sin abrir modal (desde votos)
+async function delDayByKey(key){
+  if(!confirm('¿Eliminar este día del calendario y de la votación?'))return;
+  const [d,m,y]=key.split('-').map(Number);
+  const cultos=getCultos(y,m);
+  const culto=cultos.find(c=>cKey(c)===key);
+  try{
+    if(culto?.isExtra && culto?.exId){
+      await sbDelete('eventos_extra',{id:culto.exId});
+      S.extras=S.extras.filter(e=>e.id!==culto.exId);
+    } else {
+      const yaExcluido=S.excluidos.find(e=>e.d===d&&e.m===m&&e.y===y);
+      if(!yaExcluido){
+        const [row]=await sbInsert('dias_excluidos',[{dia:d,mes:m,anio:y}]);
+        S.excluidos.push({id:row.id,d,m,y});
+      }
+    }
+    await sbDelete('escala',{dia:d,mes:m,anio:y});
+    S.scale=S.scale.filter(s=>!(s.d===d&&s.m===m&&s.y===y));
+    renderVotos();renderCal();
+    if(document.getElementById('pg-cultos').classList.contains('on'))renderCultos();
+    toast('🗑 Día eliminado');
+  }catch(e){console.error(e);toast('❌ Error eliminando');}
+}
+
+async function restoreDay(key){
+  const [d,m,y]=key.split('-').map(Number);
+  const excl=S.excluidos.find(e=>e.d===d&&e.m===m&&e.y===y);
+  if(!excl){toast('Este día no está excluido');return;}
+  try{
+    await sbDelete('dias_excluidos',{id:excl.id});
+    S.excluidos=S.excluidos.filter(e=>e.id!==excl.id);
+    renderCal();
+    if(document.getElementById('pg-cultos').classList.contains('on'))renderCultos();
+    if(document.getElementById('pg-votos').classList.contains('on'))renderVotos();
+    toast('✅ Día restaurado al calendario');
+  }catch(e){console.error(e);toast('❌ Error restaurando');}
+}
+
+// ── DISPONIBILIDAD ──
+function renderAvail(){
+  const body=document.getElementById('avail-body');
+  let vm=S.month+1,vy=S.year;if(vm>11){vm=0;vy++;}
+  const key=`${S.me.id}-${vm}-${vy}`;
+  const saved=S.avail[key]||[];
+
+  if(!votacionEstaAbierta()){
+    body.innerHTML=`<div class="card" style="text-align:center;padding:36px 20px">
+      <div style="font-size:40px;margin-bottom:12px">🔒</div>
+      <div style="font-size:16px;font-weight:700;color:var(--tx);margin-bottom:8px">Votación cerrada</div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.6">La votación se abre automáticamente entre el 25 y el último día de cada mes.</div>
+    </div>`;
+    return;
+  }
+
+  // Solo los cultos del mes siguiente
+  const cultos=getCultos(vy,vm).filter(c=>c.date.getMonth()===vm);
+
+  const bloques=cultos.map(c=>{
+    const d=c.date.getDate();
+    const isSi=saved.includes(d);
+    const isNo=saved.includes(-d); // negativos = No
+    return `<div class="vot-bloque" id="vb-${d}">
+      <div class="vot-bloque-left">
+        <div class="vot-bloque-date">
+          <div class="vot-bloque-dn">${d}</div>
+          <div class="vot-bloque-dm">${MES[vm].slice(0,3)}</div>
+        </div>
+        <div class="vot-bloque-info">
+          <div class="vot-bloque-label">${c.label}</div>
+          <div class="vot-bloque-dia">${c.dia}</div>
+          <div class="vot-bloque-areas">${c.areas.map(a=>achip(a)).join('')}</div>
+        </div>
+      </div>
+      <div class="vot-bloque-btns">
+        <button class="vot-yn yn-si${isSi?' yn-active-si':''}" onclick="voteDay(${d},'si','${key}')">✓ Sí</button>
+        <button class="vot-yn yn-no${isNo?' yn-active-no':''}" onclick="voteDay(${d},'no','${key}')">✗ No</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const totalSi=saved.filter(d=>d>0).length;
+  const totalNo=saved.filter(d=>d<0).length;
+  const totalPend=cultos.length-totalSi-totalNo;
+  const yaVoto=totalSi+totalNo>0;
+
+  body.innerHTML=`
+    <div class="card" style="margin-bottom:12px;background:linear-gradient(135deg,#0f1f0a,#0a1a10);border-color:rgba(80,250,123,.2)">
+      <div style="font-family:'Instrument Serif',serif;font-size:22px;color:#fff;font-weight:900;margin-bottom:6px">
+        🗳️ Disponibilidad — ${MES[vm]} ${vy}
+      </div>
+      <div style="font-size:12px;color:rgba(80,250,123,.6);line-height:1.6">
+        ⚠️ Cualquier cambio por favor avisar con tiempo.
+      </div>
+      ${yaVoto?`<div style="font-size:11px;color:rgba(255,255,255,.35);margin-top:5px">Puedes modificar tus respuestas hasta que se cierre la votación.</div>`:''}
+    </div>
+    <div class="vot-progress">
+      <div class="vot-prog-row">
+        <span class="vot-prog-label">Respondidos</span>
+        <span class="vot-prog-val">${totalSi+totalNo} de ${cultos.length}</span>
+      </div>
+      <div class="vot-prog-bar-bg">
+        <div class="vot-prog-bar-fill" style="width:${cultos.length?Math.round((totalSi+totalNo)/cultos.length*100):0}%"></div>
+      </div>
+      <div class="vot-prog-chips">
+        <span class="vot-pc si">${totalSi} Sí</span>
+        <span class="vot-pc no">${totalNo} No</span>
+        ${totalPend>0?`<span class="vot-pc pend">${totalPend} pendientes</span>`:''}
+      </div>
+    </div>
+    ${bloques}
+    <button class="btn btn-ok btn-blk" style="margin-top:8px" onclick="saveAvail('${key}',${vm},${vy})">💾 Guardar respuestas</button>
+    <div id="avail-msg" style="font-size:12px;color:var(--t2);text-align:center;margin-top:10px;padding-bottom:80px"></div>`;
+}
+
+function voteDay(d, voto, key){
+  let saved=S.avail[key]||[];
+  // Limpiar votos anteriores para este día
+  saved=saved.filter(x=>Math.abs(x)!==d);
+  if(voto==='si') saved.push(d);
+  else saved.push(-d); // negativo = No
+  S.avail[key]=saved;
+
+  // Actualizar UI
+  const bloque=document.getElementById(`vb-${d}`);
+  if(bloque){
+    bloque.querySelector('.yn-si').classList.toggle('yn-active-si', voto==='si');
+    bloque.querySelector('.yn-no').classList.toggle('yn-active-no', voto==='no');
+  }
+
+  // Actualizar progreso
+  const totalSi=saved.filter(x=>x>0).length;
+  const totalNo=saved.filter(x=>x<0).length;
+  const total=document.querySelectorAll('.vot-bloque').length;
+  const pEl=document.querySelector('.vot-prog-val');
+  if(pEl) pEl.textContent=`${totalSi+totalNo} de ${total}`;
+  const bEl=document.querySelector('.vot-prog-bar-fill');
+  if(bEl) bEl.style.width=`${total?Math.round((totalSi+totalNo)/total*100):0}%`;
+  const chips=document.querySelector('.vot-prog-chips');
+  if(chips) chips.innerHTML=`
+    <span class="vot-pc si">${totalSi} Sí</span>
+    <span class="vot-pc no">${totalNo} No</span>
+    ${total-totalSi-totalNo>0?`<span class="vot-pc pend">${total-totalSi-totalNo} pendientes</span>`:''}`;
+}
+
+function toggleDay(d,key){ voteDay(d,'si',key); } // legacy compat
+async function saveAvail(key,vm,vy){
+  const saved=S.avail[key]||[];
+  const [voluntario_id] = key.split('-').map(Number);
+  try{
+    await sbUpsert('disponibilidad',[{voluntario_id, mes:vm, anio:vy, dias:saved}], 'voluntario_id,mes,anio');
+    toast(`✅ ${saved.length} día(s) guardado(s) para ${MES[vm]}`);
+  }catch(e){console.error(e);toast('❌ Error guardando disponibilidad');}
+}
+
+// ── AI SCALE ──
+async function genScale(){
+  if(!S.vols.length){toast('⚠️ Agrega voluntarios primero');return;}
+  const cultos=getCultos(S.year,S.month).filter(c=>c.date.getMonth()===S.month);
+  if(!cultos.length){toast('⚠️ No hay cultos este mes');return;}
+
+  document.getElementById('lbar').classList.add('on');
+  document.getElementById('esc-out').style.display='none';
+
+  // Contar turnos actuales de cada voluntario para equilibrar
+  const turnCount={}; // {volId: {total, som, proj, trs}}
+  S.vols.forEach(v=>{ turnCount[v.id]={total:0,som:0,proj:0,trs:0}; });
+
+  // Disponibilidad: días en los que cada vol marcó Sí
+  const avail={};
+  S.vols.forEach(v=>{
+    const key=`${v.id}-${S.month}-${S.year}`;
+    const days=S.avail[key]||[];
+    avail[v.id]=days.filter(d=>d>0); // solo días Sí
+  });
+
+  // Función: obtener el mejor voluntario para un área en un culto
+  function bestVol(area, date, assigned){
+    const day=date.getDate();
+    // Filtrar vols que saben el área
+    let candidates=S.vols.filter(v=>{
+      if(!v.skills.includes(area)) return false; // no sabe el área
+      if(assigned.includes(v.id)) return false;  // ya asignado ese día
+      // Si tiene disponibilidad declarada, verificar que marcó ese día
+      if(avail[v.id].length>0 && !avail[v.id].includes(day)) return false;
+      return true;
+    });
+    if(!candidates.length){
+      // Si nadie disponible con votación, ignorar restricción de disponibilidad
+      candidates=S.vols.filter(v=>v.skills.includes(area)&&!assigned.includes(v.id));
+    }
+    if(!candidates.length) return null;
+    // Elegir el que tiene menos turnos en esa área
+    candidates.sort((a,b)=>{
+      const ta=turnCount[a.id]?.[area]||0;
+      const tb=turnCount[b.id]?.[area]||0;
+      if(ta!==tb) return ta-tb;
+      return (turnCount[a.id]?.total||0)-(turnCount[b.id]?.total||0);
+    });
+    return candidates[0];
+  }
+
+  // Generar asignaciones
+  const result=[];
+  cultos.forEach(c=>{
+    const assigned=[]; // IDs ya asignados este día
+    const entry={d:c.date.getDate(),m:c.date.getMonth(),y:c.date.getFullYear(),som:'',proj:'',trs:''};
+    ['som','proj','trs'].forEach(area=>{
+      if(!c.areas.includes(area)) return;
+      const v=bestVol(area,c.date,assigned);
+      if(v){
+        entry[area]=v.name;
+        assigned.push(v.id);
+        turnCount[v.id].total++;
+        turnCount[v.id][area]++;
+      }
+    });
+    result.push(entry);
+  });
+
+  // Guardar en Supabase y estado local
+  const keys=new Set(cultos.map(c=>cKey(c)));
+  S.scale=S.scale.filter(s=>!keys.has(`${s.d}-${s.m}-${s.y}`));
+  S.scale.push(...result);
+  try{
+    await sbUpsert('escala',result.map(p=>({dia:p.d,mes:p.m,anio:p.y,som:p.som,proj:p.proj,trs:p.trs})),'dia,mes,anio');
+  }catch(e){console.error(e);toast('⚠️ Escala generada pero no guardada en la base');}
+
+  // Mostrar resultado
+  document.getElementById('lbar').classList.remove('on');
+  document.getElementById('esc-out').style.display='block';
+  document.getElementById('esc-mes').textContent=`${MES[S.month]} ${S.year}`;
+
+  // Texto legible de la escala
+  let texto='';
+  cultos.forEach((c,i)=>{
+    const e=result[i];
+    texto+=`📅 ${c.date.getDate()}/${c.date.getMonth()+1} — ${c.dia} | ${c.label}\n`;
+    if(c.areas.includes('som'))  texto+=`🎙 Sonido: ${e.som||'Sin asignar'}\n`;
+    if(c.areas.includes('proj')) texto+=`📽 Proyector: ${e.proj||'Sin asignar'}\n`;
+    if(c.areas.includes('trs'))  texto+=`📡 Transmisión: ${e.trs||'Sin asignar'}\n`;
+    texto+='\n';
+  });
+  document.getElementById('esc-raw').textContent=texto;
+
+  renderResumen(turnCount);
+  renderCal();
+  toast('✅ Escala generada y guardada');
+}
+
+function renderResumen(turnCount){
+  document.getElementById('res-list').innerHTML=S.vols
+    .filter(v=>turnCount[v.id]?.total>0)
+    .sort((a,b)=>turnCount[b.id].total-turnCount[a.id].total)
+    .map(v=>{
+      const t=turnCount[v.id];
+      return `<div class="res-card">
+        ${avEl(v,32,8)}
+        <div class="res-info">
+          <div class="res-name">${v.name}</div>
+          <div class="res-detail">${t.total} turno(s)
+            ${t.som?`· 🎙 ${t.som}`:''}
+            ${t.proj?`· 📽 ${t.proj}`:''}
+            ${t.trs?`· 📡 ${t.trs}`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// ── EDIT TABLE ──
+function scaleMap(){
+  const m={};S.scale.forEach(s=>{m[`${s.d}-${s.m}-${s.y}`]=s;});return m;
+}
+function cKey(c){ return `${c.date.getDate()}-${c.date.getMonth()}-${c.date.getFullYear()}`; }
+function renderEdit(){
+  const cultos=getCultos(S.year,S.month);
+  const sm=scaleMap();
+  const vBySk=sk=>S.vols.filter(v=>v.skills.includes(sk));
+  const mkSel=(key,area,sk,cls)=>{
+    const culto=cultos.find(c=>cKey(c)===key);
+    if(!culto?.areas.includes(area))return`<td style="text-align:center;color:var(--t3);font-size:11px">—</td>`;
+    const cur=sm[key]?.[area]||'';
+    return `<td><select class="esel" data-key="${key}" data-area="${area}">
+      <option value="">—</option>
+      ${vBySk(sk).map(v=>`<option ${cur===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
+    </select></td>`;
+  };
+  document.getElementById('etbl-body').innerHTML=cultos.map(c=>{
+    const key=cKey(c);
+    const fueraMes=c.date.getMonth()!==S.month;
+    return `<tr${fueraMes?' style="opacity:.55"':''}>
+      <td style="font-weight:700;font-size:12px;white-space:nowrap;color:var(--tx)">${c.date.getDate()} ${MES[c.date.getMonth()].slice(0,3)}</td>
+      <td><div style="font-size:12px;font-weight:600;color:var(--tx)">${c.label}${fueraMes?' <span class="badge ev">Sig. mes</span>':''}</div><div style="font-size:10px;color:var(--t3)">${c.dia}</div></td>
+      ${mkSel(key,'som','som','som')}
+      ${mkSel(key,'proj','proj','proj')}
+      ${mkSel(key,'trs','trs','trs')}
+    </tr>`;
+  }).join('');
+}
+async function saveManual(){
+  const data={};
+  document.querySelectorAll('#etbl-body .esel').forEach(s=>{
+    if(!data[s.dataset.key])data[s.dataset.key]={};
+    data[s.dataset.key][s.dataset.area]=s.value;
+  });
+  const rows=[];
+  Object.entries(data).forEach(([key,areas])=>{
+    const [d,m,y]=key.split('-').map(Number);
+    S.scale=S.scale.filter(s=>!(s.d===d&&s.m===m&&s.y===y));
+    const entry={d,m,y,som:areas.som||'',proj:areas.proj||'',trs:areas.trs||''};
+    S.scale.push(entry);
+    rows.push({dia:d,mes:m,anio:y,som:entry.som,proj:entry.proj,trs:entry.trs});
+  });
+  try{
+    if(rows.length) await sbUpsert('escala', rows, 'dia,mes,anio');
+    renderCal();toast('💾 Escala guardada');
+  }catch(e){console.error(e);toast('❌ Error guardando escala');}
+}
+
+// ── CALENDAR ──
+function renderCal(){
+  document.getElementById('cal-lbl').textContent=`${MES[S.month]} ${S.year}`;
+  const cultos=getCultos(S.year,S.month);
+  const sm=scaleMap();
+  const first=new Date(S.year,S.month,1).getDay();
+  const days=new Date(S.year,S.month+1,0).getDate();
+  const today=new Date();
+  let h='';
+  DC.forEach(d=>h+=`<div class="cal-hd">${d}</div>`);
+  for(let i=0;i<first;i++)h+='<div class="cal-cell empty"></div>';
+  for(let d=1;d<=days;d++){
+    const culto=cultos.find(c=>c.date.getDate()===d&&c.date.getMonth()===S.month);
+    const key=`${d}-${S.month}-${S.year}`;
+    const entry=sm[key];
+    const isTod=today.getDate()===d&&today.getMonth()===S.month&&today.getFullYear()===S.year;
+    const isExcluido=S.excluidos.some(e=>e.d===d&&e.m===S.month&&e.y===S.year);
+    const hasEvent=culto||entry;
+    const displayLabel=entry?.label||culto?.label||'';
+
+    h+=`<div class="cal-cell${hasEvent?' ev':''}${isTod?' tod':''}${isExcluido?' excl':''}" onclick="${hasEvent||isExcluido?`openDay('${key}')`:''}" >`;
+    h+=`<div class="cal-n">${d}</div>`;
+
+    if(isExcluido){
+      h+=`<div style="color:var(--som);font-size:8px;text-align:center;margin-top:4px;opacity:.7">Excluido</div>`;
+      h+=`<div style="color:var(--t3);font-size:9px;text-align:center;cursor:pointer" onclick="event.stopPropagation();restoreDay('${key}')">↩ Restaurar</div>`;
+    } else if(hasEvent){
+      if(displayLabel) h+=`<span class="ctag lbl">${displayLabel.split(' ').slice(0,2).join(' ')}</span>`;
+      if(entry){
+        const sn=n=>n&&n!=='—'?n.split(' ')[0]:'';
+        if(entry.som &&entry.som !=='—') h+=`<span class="ctag som">${sn(entry.som)}</span>`;
+        if(entry.proj&&entry.proj!=='—') h+=`<span class="ctag proj">${sn(entry.proj)}</span>`;
+        if(entry.trs &&entry.trs !=='—') h+=`<span class="ctag trs">${sn(entry.trs)}</span>`;
+      }
+    } else {
+      h+=`<div style="color:var(--t3);font-size:16px;text-align:center;margin-top:8px;opacity:.3">+</div>`;
+    }
+    h+='</div>';
+  }
+  document.getElementById('cal-grid').innerHTML=h;
+}
+function openDay(key){
+  const [kd,km,ky]=key.split('-').map(Number);
+  const cultos=getCultos(ky,km);
+  const culto=cultos.find(c=>cKey(c)===key);
+  S.editDayKey=key;
+  const sm=scaleMap();
+  const entry=sm[key]||{};
+
+  const curLabel=entry.label||culto?.label||'';
+  const curAreas=entry.areas||culto?.areas||['som'];
+
+  // Detectar día de la semana para el checkbox "aplicar a todos"
+  const date=new Date(ky,km,kd);
+  const dow=date.getDay();
+  const diaName=DF[dow];
+
+  // Contar cuántos cultos del mismo día de semana hay este mes
+  const sameTypeCultos=cultos.filter(c=>c.date.getDay()===dow&&c.date.getMonth()===km);
+  const showApplyAll=sameTypeCultos.length>1;
+
+  document.getElementById('mdia-h').textContent=`${kd} ${MES[km]} ${ky}${culto?' — '+diaName:''}`;
+
+  const vBySk=sk=>S.vols.filter(v=>v.skills.includes(sk));
+  const mkSel=(area,sk,lbl)=>{
+    const cur=entry[area]||'';
+    const active=curAreas.includes(area);
+    return `<div class="fld" id="fld-${area}" style="${active?'':'opacity:.4'}">
+      <label style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="chk-${area}" ${active?'checked':''} onchange="toggleAreaFld('${area}')">
+        ${aico(area)} ${lbl}
+      </label>
+      <select class="inp" id="md-${area}" ${active?'':'disabled'}>
+        <option value="">Sin asignar</option>
+        ${vBySk(sk).map(v=>`<option ${cur===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
+      </select>
+    </div>`;
+  };
+
+  document.getElementById('mdia-body').innerHTML=`
+    <div class="fld">
+      <label>Nombre del culto</label>
+      <input class="inp" id="md-label" type="text" value="${curLabel}" placeholder="Ej: Reunión de Jóvenes">
+    </div>
+    ${showApplyAll?`
+    <label style="display:flex;align-items:center;gap:8px;padding:10px 0;font-size:13px;color:var(--t2);cursor:pointer">
+      <input type="checkbox" id="chk-all" style="width:16px;height:16px;accent-color:var(--acc)">
+      Aplicar nombre a todos los <strong style="color:var(--tx)">${diaName}s</strong> del mes (${sameTypeCultos.length} días)
+    </label>`:''}
+    ${mkSel('som','som','Sonido')}
+    ${mkSel('proj','proj','Proyector')}
+    ${mkSel('trs','trs','Transmisión')}
+  `;
+  openOv('ov-dia');
+}
+
+function toggleAreaFld(area){
+  const chk=document.getElementById('chk-'+area);
+  const fld=document.getElementById('fld-'+area);
+  const sel=document.getElementById('md-'+area);
+  const on=chk.checked;
+  fld.style.opacity=on?'1':'0.4';
+  sel.disabled=!on;
+  if(!on)sel.value='';
+}
+
+async function saveDay(){
+  const key=S.editDayKey;if(!key)return;
+  const [d,m,y]=key.split('-').map(Number);
+  const label=document.getElementById('md-label')?.value.trim()||'';
+  const applyAll=document.getElementById('chk-all')?.checked||false;
+  const areas=[];
+  const entry={d,m,y,label,som:'',proj:'',trs:'',areas:[]};
+  ['som','proj','trs'].forEach(a=>{
+    const chk=document.getElementById('chk-'+a);
+    const sel=document.getElementById('md-'+a);
+    if(chk?.checked){ areas.push(a); if(sel)entry[a]=sel.value; }
+  });
+  entry.areas=areas;
+
+  try{
+    if(applyAll && label){
+      // Aplicar el nombre a todos los días del mismo día de semana del mes
+      const date=new Date(y,m,d);
+      const dow=date.getDay();
+      const cultos=getCultos(y,m).filter(c=>c.date.getDay()===dow&&c.date.getMonth()===m);
+      const rows=cultos.map(c=>({
+        dia:c.date.getDate(),mes:m,anio:y,
+        som:'',proj:'',trs:'',
+        label,areas:entry.areas
+      }));
+      // Mantener asignados existentes, solo actualizar label y areas
+      rows.forEach(r=>{
+        const k=`${r.dia}-${m}-${y}`;
+        const existing=scaleMap()[k]||{};
+        r.som=existing.som||''; r.proj=existing.proj||''; r.trs=existing.trs||'';
+      });
+      await sbUpsert('escala',rows,'dia,mes,anio');
+      // Actualizar S.scale local
+      rows.forEach(r=>{
+        S.scale=S.scale.filter(s=>!(s.d===r.dia&&s.m===m&&s.y===y));
+        S.scale.push({d:r.dia,m,y,som:r.som,proj:r.proj,trs:r.trs,label:r.label,areas:r.areas});
+      });
+      toast(`💾 Nombre aplicado a todos los ${DF[dow]}s del mes`);
+    } else {
+      // Solo este día
+      await sbUpsert('escala',[{dia:d,mes:m,anio:y,som:entry.som,proj:entry.proj,trs:entry.trs,label:entry.label,areas:entry.areas}],'dia,mes,anio');
+      S.scale=S.scale.filter(s=>!(s.d===d&&s.m===m&&s.y===y));
+      S.scale.push(entry);
+      toast('💾 Día guardado');
+    }
+    closeOv('ov-dia');renderCal();
+    if(document.getElementById('pg-edit').classList.contains('on'))renderEdit();
+    if(document.getElementById('pg-cultos').classList.contains('on'))renderCultos();
+    if(document.getElementById('pg-votos').classList.contains('on'))renderVotos();
+  }catch(e){console.error(e);toast('❌ Error guardando');}
+}
+async function delDay(){
+  const key=S.editDayKey;if(!key)return;
+  const [d,m,y]=key.split('-').map(Number);
+  const cultos=getCultos(y,m);
+  const culto=cultos.find(c=>cKey(c)===key);
+  try{
+    if(culto?.isExtra && culto?.exId){
+      await sbDelete('eventos_extra',{id:culto.exId});
+      S.extras=S.extras.filter(e=>e.id!==culto.exId);
+    } else {
+      const yaExcluido=S.excluidos.find(e=>e.d===d&&e.m===m&&e.y===y);
+      if(!yaExcluido){
+        const [row]=await sbInsert('dias_excluidos',[{dia:d,mes:m,anio:y}]);
+        S.excluidos.push({id:row.id,d,m,y});
+      }
+    }
+    await sbDelete('escala',{dia:d,mes:m,anio:y});
+    S.scale=S.scale.filter(s=>!(s.d===d&&s.m===m&&s.y===y));
+    closeOv('ov-dia');renderCal();
+    if(document.getElementById('pg-cultos').classList.contains('on'))renderCultos();
+    if(document.getElementById('pg-votos').classList.contains('on'))renderVotos();
+    toast('🗑 Día eliminado del calendario');
+  }catch(e){console.error(e);toast('❌ Error eliminando');}
+}
+
+// ── WA ──
+function copyWA(){
+  const cultos=getCultos(S.year,S.month);
+  const sm=scaleMap();
+  let txt=`🎛️ *ESCALA MULTIMEDIA — ${MES[S.month].toUpperCase()} ${S.year}*\n\n`;
+  cultos.forEach(c=>{
+    const key=cKey(c);
+    const e=sm[key];
+    txt+=`📅 *${c.date.getDate()} ${MES[c.date.getMonth()].slice(0,3)} — ${c.dia}*\n_${c.label}_\n`;
+    if(c.areas.includes('som')) txt+=`🎙 Sonido: ${e?.som||'Sin asignar'}\n`;
+    if(c.areas.includes('proj'))txt+=`📽 Proyector: ${e?.proj||'Sin asignar'}\n`;
+    if(c.areas.includes('trs')) txt+=`📡 Transmisión: ${e?.trs||'Sin asignar'}\n`;
+    txt+='\n';
+  });
+  navigator.clipboard.writeText(txt).then(()=>toast('📲 ¡Copiado para WhatsApp!'));
+}
+
+// ── MI ESCALA ──
+function renderMe(){
+  if(!S.me)return;
+  const v=S.me;
+  const cultos=getCultos(S.year,S.month);
+  const sm=scaleMap();
+  const c=avC(v.id%AVC.length);
+  document.getElementById('me-hero').innerHTML=`
+    <div class="vh">
+      <div class="vh-av" style="background:${c}20;color:${c};border:2px solid ${c}40">${avI(v.name)}</div>
+      <div class="vh-name">${v.name}</div>
+      <div class="vh-month">${MES[S.month]} ${S.year}</div>
+      <div class="vh-chips">${v.skills.map(a=>achip(a)).join('')}</div>
+    </div>`;
+
+  let banner='';
+  if(votacionEstaAbierta()){
+    let vm=S.month+1,vy=S.year;if(vm>11){vm=0;vy++;}
+    banner=`<div class="vot-banner" style="margin-bottom:14px">
+      <div class="vb-top">
+        <div class="vb-ico">🗳️</div>
+        <div><div class="vb-title">¡Votación abierta!</div>
+        <div class="vb-sub">Marca tu disponibilidad para ${MES[vm]} ${vy}</div></div>
+      </div>
+      <button class="btn btn-ok btn-blk" onclick="navTo('pg-avail','Disponibilidad')">Votar ahora →</button>
+    </div>`;
+  }
+
+  const myTurns=cultos.map(c=>{
+    const key=cKey(c);
+    const e=sm[key];if(!e)return null;
+    const myA=[];
+    if(e.som===v.name)myA.push({a:'som',label:'Sonido'});
+    if(e.proj===v.name)myA.push({a:'proj',label:'Proyector'});
+    if(e.trs===v.name)myA.push({a:'trs',label:'Transmisión'});
+    if(!myA.length)return null;
+    // Compañeros: otras personas asignadas ese mismo día en otras áreas
+    const myAreas=myA.map(x=>x.a);
+    const companeros=[];
+    if(e.som  && e.som!==v.name  && !myAreas.includes('som'))  companeros.push({a:'som', name:e.som});
+    if(e.proj && e.proj!==v.name && !myAreas.includes('proj')) companeros.push({a:'proj',name:e.proj});
+    if(e.trs  && e.trs!==v.name  && !myAreas.includes('trs'))  companeros.push({a:'trs', name:e.trs});
+    return {culto:c,myA,companeros};
+  }).filter(Boolean);
+
+  document.getElementById('me-turns').innerHTML=banner+(myTurns.length
+    ?`<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-bottom:10px">Tus ${myTurns.length} turno(s) en ${MES[S.month]}</div>`
+      +myTurns.map(t=>`
+        <div class="turn-card">
+          <div class="tc-date"><div class="tc-dn">${t.culto.date.getDate()}</div><div class="tc-dm">${MES[t.culto.date.getMonth()].slice(0,3)}</div></div>
+          <div class="tc-info">
+            <div class="tc-lbl">${t.culto.label}${t.culto.isExtra?` <span class="badge ev">Evento</span>`:''}</div>
+            <div class="tc-area">${t.culto.dia} · <strong>${t.myA.map(x=>x.label).join(' + ')}</strong></div>
+            <div class="tc-chips">${t.myA.map(x=>achip(x.a)).join('')}</div>
+            ${t.companeros.length?`<div class="tc-team">👥 Con: ${t.companeros.map(c=>`<span class="tc-team-item">${aico(c.a)} ${c.name}</span>`).join(' · ')}</div>`:''}
+          </div>
+        </div>`).join('')
+    :'<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">La escala de este mes aún no fue publicada.</div></div>');
+}
+
+// ── PERFIL (cambiar PIN) ──
+function renderPerfil(){
+  if(!S.me)return;
+  const v=S.me;
+  const c=avC(v.id%AVC.length);
+  const avatarEl=v.avatar
+    ?`<img src="${v.avatar}" style="width:72px;height:72px;border-radius:18px;object-fit:cover;border:3px solid ${c}44">`
+    :`<div style="width:72px;height:72px;border-radius:18px;background:${c}22;color:${c};border:2px solid ${c}44;display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:28px;font-weight:700;margin:0 auto">${avInit(v.name)}</div>`;
+
+  document.getElementById('perfil-body').innerHTML=`
+    <div class="card" style="text-align:center;margin-bottom:14px">
+      <div style="position:relative;display:inline-block;margin-bottom:12px">
+        ${avatarEl}
+        <label for="avatar-inp" style="position:absolute;bottom:-4px;right:-4px;width:26px;height:26px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,.4)">📷</label>
+        <input type="file" id="avatar-inp" accept="image/*" style="display:none" onchange="uploadAvatar(event)">
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--tx)">${v.name}</div>
+      <div class="vc-chips" style="justify-content:center;margin-top:8px">${v.skills.map(a=>achip(a)).join('')}</div>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="ct">Notificaciones</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--tx)">Votación abierta</div>
+          <div style="font-size:11px;color:var(--t2)">Aviso cuando el admin abre la votación</div>
+        </div>
+        <label class="toggle-sw" id="notif-open-lbl">
+          <input type="checkbox" id="notif-open" ${S.me.notifOpen?'checked':''} onchange="toggleNotif('open')">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+      <div style="border-top:1px solid var(--bd);margin:4px 0"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--tx)">1 día para cerrar</div>
+          <div style="font-size:11px;color:var(--t2)">Recordatorio antes de que cierre la votación</div>
+        </div>
+        <label class="toggle-sw" id="notif-close-lbl">
+          <input type="checkbox" id="notif-close" ${S.me.notifClose?'checked':''} onchange="toggleNotif('close')">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+      <div id="notif-status" style="font-size:11px;color:var(--t2);margin-top:8px;text-align:center"></div>
+    </div>
+    <div class="card">
+      <div class="ct">Cambiar PIN</div>
+      <div class="fld"><label>PIN actual</label><input class="inp" type="password" inputmode="numeric" maxlength="4" id="pf-pin-old" placeholder="••••"></div>
+      <div class="fld"><label>Nuevo PIN (4 dígitos)</label><input class="inp" type="password" inputmode="numeric" maxlength="4" id="pf-pin-new" placeholder="••••"></div>
+      <div class="fld"><label>Confirmar nuevo PIN</label><input class="inp" type="password" inputmode="numeric" maxlength="4" id="pf-pin-new2" placeholder="••••"></div>
+      <button class="btn btn-ok btn-blk" onclick="changeOwnPin()">💾 Cambiar PIN</button>
+    </div>`;
+
+  // Verificar estado de notificaciones
+  checkNotifStatus();
+}
+
+async function uploadAvatar(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  if(file.size>2*1024*1024){toast('⚠️ La imagen debe ser menor de 2MB');return;}
+  const reader=new FileReader();
+  reader.onload=async(ev)=>{
+    const base64=ev.target.result;
+    try{
+      await sbUpdate('voluntarios',{id:S.me.id},{avatar:base64});
+      const i=S.vols.findIndex(x=>x.id===S.me.id);
+      if(i>=0){S.vols[i].avatar=base64;S.me=S.vols[i];}
+      renderPerfil();
+      toast('✅ Foto actualizada');
+    }catch(err){console.error(err);toast('❌ Error subiendo foto');}
+  };
+  reader.readAsDataURL(file);
+}
+
+function checkNotifStatus(){
+  const st=document.getElementById('notif-status');
+  if(!st)return;
+  if(!('Notification' in window)){
+    st.textContent='⚠️ Tu navegador no soporta notificaciones';return;
+  }
+  if(Notification.permission==='granted') st.textContent='✅ Notificaciones activadas';
+  else if(Notification.permission==='denied') st.textContent='❌ Notificaciones bloqueadas — actívalas en ajustes del navegador';
+  else st.textContent='Toca un switch para activar las notificaciones';
+}
+
+async function toggleNotif(type){
+  if(!('Notification' in window)){toast('⚠️ Tu navegador no soporta notificaciones');return;}
+  if(Notification.permission!=='granted'){
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){toast('❌ Permiso denegado');checkNotifStatus();return;}
+  }
+  const key=type==='open'?'notifOpen':'notifClose';
+  const val=document.getElementById(`notif-${type}`).checked;
+  S.me[key]=val;
+  const i=S.vols.findIndex(x=>x.id===S.me.id);
+  if(i>=0)S.vols[i][key]=val;
+  try{
+    const patch={};patch[key]=val;
+    await sbUpdate('voluntarios',{id:S.me.id},patch);
+    toast(val?`🔔 Notificación activada`:`🔕 Notificación desactivada`);
+  }catch(e){console.error(e);}
+  checkNotifStatus();
+}
+
+// Enviar notificación local (browser Notification API)
+function sendLocalNotif(title, body){
+  if(Notification.permission!=='granted')return;
+  new Notification(title,{body,icon:'/icon-192.png',badge:'/icon-192.png'});
+}
+
+// Chequear si hay que notificar (llamado al cargar datos)
+function checkNotifTriggers(){
+  if(!S.me)return;
+  const today=new Date();
+  const d=today.getDate();
+  const lastDay=new Date(today.getFullYear(),today.getMonth()+1,0).getDate();
+  const isOpen=votacionEstaAbierta();
+  const isLastDay=d===lastDay;
+
+  // Guardar estado previo en sessionStorage para no repetir notif en la misma sesión
+  const wasOpen=sessionStorage.getItem('vot_was_open')==='true';
+
+  if(isOpen&&!wasOpen&&S.me.notifOpen){
+    sendLocalNotif('🗳️ ¡Votación abierta!',`Ya puedes marcar tu disponibilidad para ${MES[today.getMonth()+1>11?0:today.getMonth()+1]}.`);
+  }
+  if(isOpen&&isLastDay&&S.me.notifClose){
+    const alerted=sessionStorage.getItem('vot_close_alerted')==='true';
+    if(!alerted){
+      sendLocalNotif('⏰ ¡La votación cierra hoy!','Es el último día para marcar tu disponibilidad.');
+      sessionStorage.setItem('vot_close_alerted','true');
+    }
+  }
+  sessionStorage.setItem('vot_was_open',String(isOpen));
+}
+async function changeOwnPin(){
+  const oldP=document.getElementById('pf-pin-old').value.trim();
+  const newP=document.getElementById('pf-pin-new').value.trim();
+  const newP2=document.getElementById('pf-pin-new2').value.trim();
+  if(String(S.me.pin)!==oldP){toast('❌ El PIN actual no coincide');return;}
+  if(!newP||newP.length!==4){toast('⚠️ El nuevo PIN debe tener 4 dígitos');return;}
+  if(newP!==newP2){toast('⚠️ Los PIN nuevos no coinciden');return;}
+  try{
+    await sbUpdate('voluntarios',{id:S.me.id},{pin:newP});
+    const i=S.vols.findIndex(x=>x.id===S.me.id);
+    if(i>=0){S.vols[i].pin=newP;S.me=S.vols[i];}
+    document.getElementById('pf-pin-old').value='';
+    document.getElementById('pf-pin-new').value='';
+    document.getElementById('pf-pin-new2').value='';
+    toast('✅ PIN actualizado');
+  }catch(e){console.error(e);toast('❌ Error actualizando PIN');}
+}
+
+// ── UTILS ──
+function openOv(id){document.getElementById(id).classList.add('on')}
+function closeOv(id){document.getElementById(id).classList.remove('on')}
+function toast(msg,dur=2800){
+  const t=document.getElementById('toast');
+  t.innerHTML=msg;t.classList.add('on');
+  if(dur>0)setTimeout(()=>t.classList.remove('on'),dur);
+}
+
+(async function init(){
+  toast('🔄 Conectando…', 8000);
+  for(let i=0; i<3; i++){
+    await ld();
+    if(S.loaded) break;
+    if(i<2) await new Promise(r=>setTimeout(r,1500));
+  }
+  if(S.loaded){
+    document.getElementById('toast').classList.remove('on');
+  } else {
+    showConexionError();
+  }
+
+  // ── PULL TO REFRESH ──
+  const scrollEl=document.querySelector('.scroll-area');
+  const ptr=document.getElementById('ptr');
+  const ptrSpinner=document.getElementById('ptr-spinner');
+  const ptrText=document.getElementById('ptr-text');
+  let startY=0,pulling=false,triggered=false;
+  const THRESHOLD=70;
+
+  scrollEl.addEventListener('touchstart',e=>{
+    if(scrollEl.scrollTop===0) startY=e.touches[0].clientY;
+  },{passive:true});
+
+  scrollEl.addEventListener('touchmove',e=>{
+    if(!startY)return;
+    const dy=e.touches[0].clientY-startY;
+    if(dy>10&&scrollEl.scrollTop===0){
+      pulling=true;
+      const progress=Math.min(dy/THRESHOLD,1);
+      ptr.style.height=(progress*52)+'px';
+      ptrSpinner.style.transform=`rotate(${progress*360}deg)`;
+      triggered=dy>THRESHOLD;
+      ptrText.textContent=triggered?'Suelta para actualizar':'Desliza para actualizar';
+    }
+  },{passive:true});
+
+  scrollEl.addEventListener('touchend',async()=>{
+    if(pulling&&triggered){
+      ptr.classList.add('visible');
+      ptrSpinner.classList.add('spinning');
+      ptrText.textContent='Actualizando…';
+      await reloadApp();
+      ptrSpinner.classList.remove('spinning');
+      ptr.classList.remove('visible');
+      ptr.style.height='0';
+    } else {
+      ptr.style.height='0';
+    }
+    startY=0;pulling=false;triggered=false;
+  },{passive:true});
+})();
+
+// ── SERVICE WORKER (PWA) ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('SW registrado'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+
+// ── ONESIGNAL ──
+const OS_APP_ID = '18730443-f208-4cd5-8c8c-ab3345533b2c';
+
+window.OneSignalDeferred = window.OneSignalDeferred || [];
+OneSignalDeferred.push(async function(OneSignal) {
+  await OneSignal.init({
+    appId: OS_APP_ID,
+    safari_web_id: '',
+    notifyButton: { enable: false },
+    allowLocalhostAsSecureOrigin: true,
+  });
+});
+
+// Suscribir voluntario a OneSignal con su ID como external_id
+async function osSubscribe(volId){
+  try{
+    await OneSignal.login(String(volId));
+    console.log('OneSignal: suscrito como', volId);
+  }catch(e){ console.warn('OneSignal subscribe error:', e); }
+}
+
+// Llamado al hacer login de voluntario — registra su ID en OneSignal
+async function osLoginVol(volId){
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal){
+    try{
+      await OneSignal.login(String(volId));
+      // Pedir permiso de notificaciones si no lo tiene
+      const perm = await OneSignal.Notifications.permission;
+      if(!perm) await OneSignal.Notifications.requestPermission();
+    }catch(e){ console.warn('OS login error:', e); }
+  });
+}
+
+// Enviar notificación a TODOS los voluntarios via REST API de OneSignal
+async function osSendToAll(title, message){
+  try{
+    await fetch('https://onesignal.com/api/v1/notifications',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        app_id: OS_APP_ID,
+        included_segments: ['All'],
+        headings: {es: title, en: title},
+        contents: {es: message, en: message},
+        small_icon: 'icon-192',
+      })
+    });
+    console.log('Notificación enviada a todos');
+  }catch(e){ console.warn('OS send error:', e); }
+}
+</script>
+</body>
+</html>
