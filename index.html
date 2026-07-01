@@ -649,6 +649,7 @@ select.inp option{background:var(--c2)}
           <thead><tr>
             <th>Fecha</th><th>Culto</th>
             <th style="color:var(--som)">🎙 Som.</th>
+            <th style="color:var(--som);opacity:.7">🙋 Apoyo</th>
             <th style="color:var(--proj)">📽 Proy.</th>
             <th style="color:var(--trs)">📡 Trans.</th>
           </tr></thead>
@@ -883,6 +884,7 @@ async function ld(){
     S.scale  = escalaRows.map(s=>({
       d:s.dia, m:s.mes, y:s.anio,
       som:s.som||'', proj:s.proj||'', trs:s.trs||'',
+      som_apoyo:s.som_apoyo||'',
       label:s.label||'', areas:s.areas||[]
     }));
     S.avail  = {};
@@ -1634,22 +1636,46 @@ function renderEdit(){
   const cultos=getCultos(S.year,S.month);
   const sm=scaleMap();
   const vBySk=sk=>S.vols.filter(v=>v.skills.includes(sk));
-  const mkSel=(key,area,sk,cls)=>{
+
+  const mkSel=(key,area,sk,cls,extraOpts='')=>{
     const culto=cultos.find(c=>cKey(c)===key);
     if(!culto?.areas.includes(area))return`<td style="text-align:center;color:var(--t3);font-size:11px">—</td>`;
     const cur=sm[key]?.[area]||'';
     return `<td><select class="esel" data-key="${key}" data-area="${area}">
       <option value="">—</option>
+      ${extraOpts}
       ${vBySk(sk).map(v=>`<option ${cur===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
     </select></td>`;
   };
+
+  const mkApoyoCell=(key,culto)=>{
+    if(!culto.areas.includes('som')) return '<td>—</td>';
+    const cur=sm[key]?.som_apoyo||'';
+    const isLun=culto.type==='lun';
+    return `<td>
+      <select class="esel" data-key="${key}" data-area="som_apoyo" style="min-width:120px">
+        <option value="">—</option>
+        ${isLun?`<option ${cur==='Apoyo'?'selected':''} value="Apoyo">🙋 Apoyo</option>`:''}
+        ${S.vols.filter(v=>v.skills.includes('som')).map(v=>`<option ${cur===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
+      </select>
+    </td>`;
+  };
+
   document.getElementById('etbl-body').innerHTML=cultos.map(c=>{
     const key=cKey(c);
     const fueraMes=c.date.getMonth()!==S.month;
+    const isLun=c.type==='lun';
     return `<tr${fueraMes?' style="opacity:.55"':''}>
       <td style="font-weight:700;font-size:12px;white-space:nowrap;color:var(--tx)">${c.date.getDate()} ${MES[c.date.getMonth()].slice(0,3)}</td>
       <td><div style="font-size:12px;font-weight:600;color:var(--tx)">${c.label}${fueraMes?' <span class="badge ev">Sig. mes</span>':''}</div><div style="font-size:10px;color:var(--t3)">${c.dia}</div></td>
-      ${mkSel(key,'som','som','som')}
+      ${mkSel(key,'som','som','som', isLun?`<option ${(sm[key]?.som==='Apoyo')?'selected':''} value="Apoyo">🙋 Apoyo</option>`:'')}
+      <td>
+        <select class="esel" data-key="${key}" data-area="som_apoyo" style="min-width:110px">
+          <option value="">+ Apoyo som</option>
+          ${isLun?`<option ${(sm[key]?.som_apoyo==='Apoyo')?'selected':''} value="Apoyo">🙋 Apoyo</option>`:''}
+          ${S.vols.filter(v=>v.skills.includes('som')).map(v=>`<option ${(sm[key]?.som_apoyo===v.name)?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
+        </select>
+      </td>
       ${mkSel(key,'proj','proj','proj')}
       ${mkSel(key,'trs','trs','trs')}
     </tr>`;
@@ -1665,9 +1691,9 @@ async function saveManual(){
   Object.entries(data).forEach(([key,areas])=>{
     const [d,m,y]=key.split('-').map(Number);
     S.scale=S.scale.filter(s=>!(s.d===d&&s.m===m&&s.y===y));
-    const entry={d,m,y,som:areas.som||'',proj:areas.proj||'',trs:areas.trs||''};
+    const entry={d,m,y,som:areas.som||'',proj:areas.proj||'',trs:areas.trs||'',som_apoyo:areas.som_apoyo||''};
     S.scale.push(entry);
-    rows.push({dia:d,mes:m,anio:y,som:entry.som,proj:entry.proj,trs:entry.trs});
+    rows.push({dia:d,mes:m,anio:y,som:entry.som,proj:entry.proj,trs:entry.trs,som_apoyo:entry.som_apoyo});
   });
   try{
     if(rows.length) await sbUpsert('escala', rows, 'dia,mes,anio');
@@ -1705,7 +1731,7 @@ function renderCal(){
       if(displayLabel) h+=`<span class="ctag lbl">${displayLabel.split(' ').slice(0,2).join(' ')}</span>`;
       if(entry){
         const sn=n=>n&&n!=='—'?n.split(' ')[0]:'';
-        if(entry.som &&entry.som !=='—') h+=`<span class="ctag som">${sn(entry.som)}</span>`;
+        if(entry.som &&entry.som !=='—') h+=`<span class="ctag som">${sn(entry.som)}${entry.som_apoyo?'+'+sn(entry.som_apoyo):''}</span>`;
         if(entry.proj&&entry.proj!=='—') h+=`<span class="ctag proj">${sn(entry.proj)}</span>`;
         if(entry.trs &&entry.trs !=='—') h+=`<span class="ctag trs">${sn(entry.trs)}</span>`;
       }
@@ -1754,6 +1780,9 @@ function openDay(key){
     </div>`;
   };
 
+  const isLun=culto?.type==='lun';
+  const curApoyo=entry.som_apoyo||'';
+
   document.getElementById('mdia-body').innerHTML=`
     <div class="fld">
       <label>Nombre del culto</label>
@@ -1765,6 +1794,14 @@ function openDay(key){
       Aplicar nombre a todos los <strong style="color:var(--tx)">${diaName}s</strong> del mes (${sameTypeCultos.length} días)
     </label>`:''}
     ${mkSel('som','som','Sonido')}
+    <div class="fld">
+      <label>🙋 Apoyo Sonido <span style="font-weight:300;color:var(--t3)">(opcional)</span></label>
+      <select class="inp" id="md-som-apoyo">
+        <option value="">— Sin apoyo —</option>
+        ${isLun?`<option ${curApoyo==='Apoyo'?'selected':''} value="Apoyo">🙋 Apoyo</option>`:''}
+        ${S.vols.filter(v=>v.skills.includes('som')).map(v=>`<option ${curApoyo===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
+      </select>
+    </div>
     ${mkSel('proj','proj','Proyector')}
     ${mkSel('trs','trs','Transmisión')}
   `;
@@ -1787,12 +1824,13 @@ async function saveDay(){
   const label=document.getElementById('md-label')?.value.trim()||'';
   const applyAll=document.getElementById('chk-all')?.checked||false;
   const areas=[];
-  const entry={d,m,y,label,som:'',proj:'',trs:'',areas:[]};
+  const entry={d,m,y,label,som:'',proj:'',trs:'',som_apoyo:'',areas:[]};
   ['som','proj','trs'].forEach(a=>{
     const chk=document.getElementById('chk-'+a);
     const sel=document.getElementById('md-'+a);
     if(chk?.checked){ areas.push(a); if(sel)entry[a]=sel.value; }
   });
+  entry.som_apoyo=document.getElementById('md-som-apoyo')?.value||'';
   entry.areas=areas;
 
   try{
@@ -1821,7 +1859,7 @@ async function saveDay(){
       toast(`💾 Nombre aplicado a todos los ${DF[dow]}s del mes`);
     } else {
       // Solo este día
-      await sbUpsert('escala',[{dia:d,mes:m,anio:y,som:entry.som,proj:entry.proj,trs:entry.trs,label:entry.label,areas:entry.areas}],'dia,mes,anio');
+      await sbUpsert('escala',[{dia:d,mes:m,anio:y,som:entry.som,proj:entry.proj,trs:entry.trs,som_apoyo:entry.som_apoyo,label:entry.label,areas:entry.areas}],'dia,mes,anio');
       S.scale=S.scale.filter(s=>!(s.d===d&&s.m===m&&s.y===y));
       S.scale.push(entry);
       toast('💾 Día guardado');
@@ -1866,7 +1904,7 @@ function copyWA(){
     const key=cKey(c);
     const e=sm[key];
     txt+=`📅 *${c.date.getDate()} ${MES[c.date.getMonth()].slice(0,3)} — ${c.dia}*\n_${c.label}_\n`;
-    if(c.areas.includes('som')) txt+=`🎙 Sonido: ${e?.som||'Sin asignar'}\n`;
+    if(c.areas.includes('som')) txt+=`🎙 Sonido: ${e?.som||'Sin asignar'}${e?.som_apoyo?' + '+e.som_apoyo:''}\n`;
     if(c.areas.includes('proj'))txt+=`📽 Proyector: ${e?.proj||'Sin asignar'}\n`;
     if(c.areas.includes('trs')) txt+=`📡 Transmisión: ${e?.trs||'Sin asignar'}\n`;
     txt+='\n';
@@ -1907,6 +1945,7 @@ function renderMe(){
     const e=sm[key];if(!e)return null;
     const myA=[];
     if(e.som===v.name)myA.push({a:'som',label:'Sonido'});
+    if(e.som_apoyo===v.name)myA.push({a:'som',label:'Apoyo Sonido'});
     if(e.proj===v.name)myA.push({a:'proj',label:'Proyector'});
     if(e.trs===v.name)myA.push({a:'trs',label:'Transmisión'});
     if(!myA.length)return null;
