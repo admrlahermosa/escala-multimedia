@@ -9,7 +9,6 @@
 <meta name="apple-mobile-web-app-title" content="Escala">
 <meta name="theme-color" content="#8b5cf6">
 <link rel="manifest" href="manifest.json">
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>Escala Multimedia</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -622,21 +621,52 @@ select.inp option{background:var(--c2)}
 
     <!-- GENERAR ESCALA -->
     <div class="pg" id="pg-esc">
-      <div class="ph"><div class="ph-eye">Inteligencia artificial</div><div class="ph-title">Generar <em>Escala</em></div></div>
+      <div class="ph"><div class="ph-eye">Algoritmo automático</div><div class="ph-title">Generar <em>Escala</em></div></div>
       <div class="ai-box">
-        <div class="ai-pill"><div class="ai-dot"></div> Agente activo</div>
+        <div class="ai-pill"><div class="ai-dot"></div> Listo para generar</div>
         <div class="ai-h">Escala del mes</div>
-        <div class="ai-d">La IA analiza habilidades, restricciones y disponibilidad votada para distribuir los turnos de forma justa.</div>
+        <div class="ai-d">El sistema distribuye automáticamente según habilidades y disponibilidad votada. Podrás revisar y editar antes de guardar.</div>
         <div class="ai-acts">
-          <button class="btn btn-ok btn-blk" onclick="genScale()">⚡ Generar ahora</button>
-          <button class="btn btn-gh btn-blk" onclick="copyWA()">📲 Copiar para WhatsApp</button>
+          <button class="btn btn-ok btn-blk" onclick="genScale()">⚡ Generar propuesta</button>
         </div>
         <div class="lbar" id="lbar"><div class="lfill"></div></div>
       </div>
+
+      <!-- PROPUESTA PARA REVISAR -->
       <div id="esc-out" style="display:none">
-        <div class="card"><div class="ct">Escala — <span id="esc-mes"></span></div><div class="scale-raw" id="esc-raw"></div></div>
-        <div class="card mt"><div class="ct">Resumen por voluntario</div><div class="res-list" id="res-list"></div></div>
-        <button class="btn btn-gh btn-blk mt" onclick="navTo('pg-edit','Editar Escala')">✏️ Ajustar manualmente</button>
+        <div class="card" style="border-color:rgba(247,183,49,.3);background:rgba(247,183,49,.04);margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="font-size:20px">⚠️</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--proj)">Revisa antes de guardar</div>
+              <div style="font-size:11px;color:var(--t2)">Edita los turnos directamente en la tabla. Cuando esté todo correcto, aprueba.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ok btn-blk" onclick="approveScale()">✅ Aprobar y guardar</button>
+            <button class="btn btn-gh btn-blk" onclick="copyWA()">📲 Copiar para WhatsApp</button>
+            <button class="btn btn-ghost btn-blk" onclick="genScale()">🔄 Regenerar</button>
+          </div>
+        </div>
+
+        <!-- TABLA EDITABLE INLINE -->
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:8px">
+          <table class="etbl">
+            <thead><tr>
+              <th>Fecha</th><th>Culto</th>
+              <th style="color:var(--som)">🎙 Som.</th>
+              <th style="color:var(--som);opacity:.7">🙋 Apoyo</th>
+              <th style="color:var(--proj)">📽 Proy.</th>
+              <th style="color:var(--trs)">📡 Trans.</th>
+            </tr></thead>
+            <tbody id="esc-tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="card mt">
+          <div class="ct">Resumen por voluntario</div>
+          <div class="res-list" id="res-list"></div>
+        </div>
       </div>
     </div>
 
@@ -1030,7 +1060,6 @@ function doLoginVol(){
   const v=S.vols.find(x=>x.id==vid);
   if(!v||String(v.pin)!==pin){toast('❌ PIN incorrecto');document.getElementById('inp-pin').value='';return;}
   S.role='vol';S.me=v;
-  osLoginVol(v.id); // registrar en OneSignal
   enterApp();
 }
 function enterApp(){
@@ -1269,18 +1298,7 @@ async function setVotMode(mode){
   try{
     await sbUpsert('config',[{key:'votOverride',value:mode}],'key');
   }catch(e){console.error(e);}
-
-  // Notificación push a todos los voluntarios
-  const abierta=votacionEstaAbierta();
-  let nm=S.month+1,ny=S.year;if(nm>11){nm=0;ny++;}
-  if(abierta){
-    await osSendToAll(
-      '🗳️ ¡Votación abierta!',
-      `Ya puedes marcar tu disponibilidad para ${MES[nm]} ${ny}. ¡Hazlo antes de que cierre!`
-    );
-  }
-
-  const labels={null:'🔄 Modo automático activado',abierta:'🟢 Votación abierta — notificación enviada',cerrada:'🔒 Votación cerrada'};
+  const labels={null:'🔄 Modo automático activado',abierta:'🟢 Votación abierta',cerrada:'🔒 Votación cerrada'};
   toast(labels[mode===null?'null':mode]||labels[mode]);
 }
 function renderVotos(){
@@ -1521,35 +1539,28 @@ async function genScale(){
   document.getElementById('lbar').classList.add('on');
   document.getElementById('esc-out').style.display='none';
 
-  // Contar turnos actuales de cada voluntario para equilibrar
-  const turnCount={}; // {volId: {total, som, proj, trs}}
+  const turnCount={};
   S.vols.forEach(v=>{ turnCount[v.id]={total:0,som:0,proj:0,trs:0}; });
 
-  // Disponibilidad: días en los que cada vol marcó Sí
   const avail={};
   S.vols.forEach(v=>{
     const key=`${v.id}-${S.month}-${S.year}`;
     const days=S.avail[key]||[];
-    avail[v.id]=days.filter(d=>d>0); // solo días Sí
+    avail[v.id]=days.filter(d=>d>0);
   });
 
-  // Función: obtener el mejor voluntario para un área en un culto
   function bestVol(area, date, assigned){
     const day=date.getDate();
-    // Filtrar vols que saben el área
     let candidates=S.vols.filter(v=>{
-      if(!v.skills.includes(area)) return false; // no sabe el área
-      if(assigned.includes(v.id)) return false;  // ya asignado ese día
-      // Si tiene disponibilidad declarada, verificar que marcó ese día
+      if(!v.skills.includes(area)) return false;
+      if(assigned.includes(v.id)) return false;
       if(avail[v.id].length>0 && !avail[v.id].includes(day)) return false;
       return true;
     });
     if(!candidates.length){
-      // Si nadie disponible con votación, ignorar restricción de disponibilidad
       candidates=S.vols.filter(v=>v.skills.includes(area)&&!assigned.includes(v.id));
     }
     if(!candidates.length) return null;
-    // Elegir el que tiene menos turnos en esa área
     candidates.sort((a,b)=>{
       const ta=turnCount[a.id]?.[area]||0;
       const tb=turnCount[b.id]?.[area]||0;
@@ -1559,11 +1570,11 @@ async function genScale(){
     return candidates[0];
   }
 
-  // Generar asignaciones
-  const result=[];
+  // Guardar propuesta en variable temporal (no en Supabase aún)
+  S._pendingScale=[];
   cultos.forEach(c=>{
-    const assigned=[]; // IDs ya asignados este día
-    const entry={d:c.date.getDate(),m:c.date.getMonth(),y:c.date.getFullYear(),som:'',proj:'',trs:''};
+    const assigned=[];
+    const entry={d:c.date.getDate(),m:c.date.getMonth(),y:c.date.getFullYear(),som:'',proj:'',trs:'',som_apoyo:''};
     ['som','proj','trs'].forEach(area=>{
       if(!c.areas.includes(area)) return;
       const v=bestVol(area,c.date,assigned);
@@ -1574,37 +1585,83 @@ async function genScale(){
         turnCount[v.id][area]++;
       }
     });
-    result.push(entry);
+    // Lunes sin nadie → poner "Apoyo" por defecto
+    if(c.type==='lun' && !entry.som) entry.som='Apoyo';
+    S._pendingScale.push({culto:c, entry});
   });
 
-  // Guardar en Supabase y estado local
+  document.getElementById('lbar').classList.remove('on');
+  document.getElementById('esc-out').style.display='block';
+
+  // Renderizar tabla editable de propuesta
+  renderEscaTbody(cultos);
+  renderResumen(turnCount);
+  toast('✅ Propuesta generada — revisa y aprueba');
+}
+
+function renderEscaTbody(cultos){
+  if(!cultos) cultos=getCultos(S.year,S.month).filter(c=>c.date.getMonth()===S.month);
+  const pending=S._pendingScale||[];
+  const vBySk=sk=>S.vols.filter(v=>v.skills.includes(sk));
+
+  const mkSel=(key,area,sk,curVal,extraOpts='')=>{
+    return `<select class="esel" data-key="${key}" data-area="${area}">
+      <option value="">—</option>
+      ${extraOpts}
+      ${vBySk(sk).map(v=>`<option ${curVal===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
+    </select>`;
+  };
+
+  document.getElementById('esc-tbody').innerHTML=pending.map(({culto:c,entry:e})=>{
+    const key=`${e.d}-${e.m}-${e.y}`;
+    const isLun=c.type==='lun';
+    const apoyo=`<option value="">—</option>${isLun?`<option ${e.som==='Apoyo'?'selected':''} value="Apoyo">🙋 Apoyo</option>`:''}`;
+    const apoyoSom=`<option value="">—</option>${isLun?`<option ${e.som_apoyo==='Apoyo'?'selected':''} value="Apoyo">🙋 Apoyo</option>`:''}`;
+    return `<tr>
+      <td style="font-weight:700;font-size:12px;white-space:nowrap;color:var(--tx)">${c.date.getDate()} ${MES[c.date.getMonth()].slice(0,3)}</td>
+      <td><div style="font-size:12px;font-weight:600;color:var(--tx)">${c.label}</div><div style="font-size:10px;color:var(--t3)">${c.dia}</div></td>
+      <td>${c.areas.includes('som')?mkSel(key,'som','som',e.som,apoyo):'—'}</td>
+      <td>${c.areas.includes('som')?mkSel(key,'som_apoyo','som',e.som_apoyo,apoyoSom):'—'}</td>
+      <td>${c.areas.includes('proj')?mkSel(key,'proj','proj',e.proj):'—'}</td>
+      <td>${c.areas.includes('trs')?mkSel(key,'trs','trs',e.trs):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function approveScale(){
+  // Leer valores de la tabla editable
+  const data={};
+  document.querySelectorAll('#esc-tbody .esel').forEach(s=>{
+    if(!data[s.dataset.key])data[s.dataset.key]={};
+    data[s.dataset.key][s.dataset.area]=s.value;
+  });
+
+  const cultos=getCultos(S.year,S.month).filter(c=>c.date.getMonth()===S.month);
+  const result=[];
+  cultos.forEach(c=>{
+    const key=`${c.date.getDate()}-${c.date.getMonth()}-${c.date.getFullYear()}`;
+    const areas=data[key]||{};
+    result.push({d:c.date.getDate(),m:c.date.getMonth(),y:c.date.getFullYear(),
+      som:areas.som||'',proj:areas.proj||'',trs:areas.trs||'',som_apoyo:areas.som_apoyo||''});
+  });
+
   const keys=new Set(cultos.map(c=>cKey(c)));
   S.scale=S.scale.filter(s=>!keys.has(`${s.d}-${s.m}-${s.y}`));
   S.scale.push(...result);
+
   try{
-    await sbUpsert('escala',result.map(p=>({dia:p.d,mes:p.m,anio:p.y,som:p.som,proj:p.proj,trs:p.trs})),'dia,mes,anio');
-  }catch(e){console.error(e);toast('⚠️ Escala generada pero no guardada en la base');}
-
-  // Mostrar resultado
-  document.getElementById('lbar').classList.remove('on');
-  document.getElementById('esc-out').style.display='block';
-  document.getElementById('esc-mes').textContent=`${MES[S.month]} ${S.year}`;
-
-  // Texto legible de la escala
-  let texto='';
-  cultos.forEach((c,i)=>{
-    const e=result[i];
-    texto+=`📅 ${c.date.getDate()}/${c.date.getMonth()+1} — ${c.dia} | ${c.label}\n`;
-    if(c.areas.includes('som'))  texto+=`🎙 Sonido: ${e.som||'Sin asignar'}\n`;
-    if(c.areas.includes('proj')) texto+=`📽 Proyector: ${e.proj||'Sin asignar'}\n`;
-    if(c.areas.includes('trs'))  texto+=`📡 Transmisión: ${e.trs||'Sin asignar'}\n`;
-    texto+='\n';
-  });
-  document.getElementById('esc-raw').textContent=texto;
-
-  renderResumen(turnCount);
-  renderCal();
-  toast('✅ Escala generada y guardada');
+    await sbUpsert('escala',result.map(p=>({
+      dia:p.d,mes:p.m,anio:p.y,
+      som:p.som,proj:p.proj,trs:p.trs,som_apoyo:p.som_apoyo
+    })),'dia,mes,anio');
+    renderCal();
+    toast('✅ Escala aprobada y guardada');
+    // Limpiar propuesta temporal
+    S._pendingScale=null;
+  }catch(e){
+    console.error(e);
+    toast('❌ Error guardando la escala');
+  }
 }
 
 function renderResumen(turnCount){
@@ -2191,62 +2248,10 @@ function toast(msg,dur=2800){
 // ── SERVICE WORKER (PWA) ──
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('/escala-multimedia/sw.js', {scope: '/escala-multimedia/'})
       .then(() => console.log('SW registrado'))
       .catch(e => console.log('SW error:', e));
   });
-}
-
-// ── ONESIGNAL ──
-const OS_APP_ID = '18730443-f208-4cd5-8c8c-ab3345533b2c';
-
-window.OneSignalDeferred = window.OneSignalDeferred || [];
-OneSignalDeferred.push(async function(OneSignal) {
-  await OneSignal.init({
-    appId: OS_APP_ID,
-    safari_web_id: '',
-    notifyButton: { enable: false },
-    allowLocalhostAsSecureOrigin: true,
-  });
-});
-
-// Suscribir voluntario a OneSignal con su ID como external_id
-async function osSubscribe(volId){
-  try{
-    await OneSignal.login(String(volId));
-    console.log('OneSignal: suscrito como', volId);
-  }catch(e){ console.warn('OneSignal subscribe error:', e); }
-}
-
-// Llamado al hacer login de voluntario — registra su ID en OneSignal
-async function osLoginVol(volId){
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal){
-    try{
-      await OneSignal.login(String(volId));
-      // Pedir permiso de notificaciones si no lo tiene
-      const perm = await OneSignal.Notifications.permission;
-      if(!perm) await OneSignal.Notifications.requestPermission();
-    }catch(e){ console.warn('OS login error:', e); }
-  });
-}
-
-// Enviar notificación a TODOS los voluntarios via REST API de OneSignal
-async function osSendToAll(title, message){
-  try{
-    await fetch('https://onesignal.com/api/v1/notifications',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        app_id: OS_APP_ID,
-        included_segments: ['All'],
-        headings: {es: title, en: title},
-        contents: {es: message, en: message},
-        small_icon: 'icon-192',
-      })
-    });
-    console.log('Notificación enviada a todos');
-  }catch(e){ console.warn('OS send error:', e); }
 }
 </script>
 </body>
