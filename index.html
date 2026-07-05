@@ -649,19 +649,8 @@ select.inp option{background:var(--c2)}
           </div>
         </div>
 
-        <!-- TABLA EDITABLE INLINE -->
-        <div class="card" style="padding:0;overflow:hidden;margin-bottom:8px">
-          <table class="etbl">
-            <thead><tr>
-              <th>Fecha</th><th>Culto</th>
-              <th style="color:var(--som)">🎙 Som.</th>
-              <th style="color:var(--som);opacity:.7">🙋 Apoyo</th>
-              <th style="color:var(--proj)">📽 Proy.</th>
-              <th style="color:var(--trs)">📡 Trans.</th>
-            </tr></thead>
-            <tbody id="esc-tbody"></tbody>
-          </table>
-        </div>
+        <!-- TARJETAS EDITABLES INLINE -->
+        <div id="esc-cards" style="margin-bottom:8px"></div>
 
         <div class="card mt">
           <div class="ct">Resumen por voluntario</div>
@@ -1605,33 +1594,58 @@ function renderEscaTbody(cultos){
   const vBySk=sk=>S.vols.filter(v=>v.skills.includes(sk));
 
   const mkSel=(key,area,sk,curVal,extraOpts='')=>{
-    return `<select class="esel" data-key="${key}" data-area="${area}">
-      <option value="">—</option>
+    return `<select class="esel inp" data-key="${key}" data-area="${area}" style="font-size:13px;padding:8px 10px">
+      <option value="">— Sin asignar —</option>
       ${extraOpts}
       ${vBySk(sk).map(v=>`<option ${curVal===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
     </select>`;
   };
 
-  document.getElementById('esc-tbody').innerHTML=pending.map(({culto:c,entry:e})=>{
+  document.getElementById('esc-cards').innerHTML=pending.map(({culto:c,entry:e})=>{
     const key=`${e.d}-${e.m}-${e.y}`;
     const isLun=c.type==='lun';
-    const apoyo=`<option value="">—</option>${isLun?`<option ${e.som==='Apoyo'?'selected':''} value="Apoyo">🙋 Apoyo</option>`:''}`;
-    const apoyoSom=`<option value="">—</option>${isLun?`<option ${e.som_apoyo==='Apoyo'?'selected':''} value="Apoyo">🙋 Apoyo</option>`:''}`;
-    return `<tr>
-      <td style="font-weight:700;font-size:12px;white-space:nowrap;color:var(--tx)">${c.date.getDate()} ${MES[c.date.getMonth()].slice(0,3)}</td>
-      <td><div style="font-size:12px;font-weight:600;color:var(--tx)">${c.label}</div><div style="font-size:10px;color:var(--t3)">${c.dia}</div></td>
-      <td>${c.areas.includes('som')?mkSel(key,'som','som',e.som,apoyo):'—'}</td>
-      <td>${c.areas.includes('som')?mkSel(key,'som_apoyo','som',e.som_apoyo,apoyoSom):'—'}</td>
-      <td>${c.areas.includes('proj')?mkSel(key,'proj','proj',e.proj):'—'}</td>
-      <td>${c.areas.includes('trs')?mkSel(key,'trs','trs',e.trs):'—'}</td>
-    </tr>`;
+    const apoyoExtra=isLun?`<option value="Apoyo">🙋 Apoyo</option>`:'';
+
+    return `<div class="culto-card" style="margin-bottom:8px">
+      <div class="cc-top">
+        <div class="cc-date">
+          <div class="cc-dn">${c.date.getDate()}</div>
+          <div class="cc-dm">${MES[c.date.getMonth()].slice(0,3)}</div>
+        </div>
+        <div class="cc-body" style="padding-bottom:0">
+          <div class="cc-label">${c.label}</div>
+          <div class="cc-dia">${c.dia}</div>
+        </div>
+      </div>
+      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--bd)">
+        ${c.areas.includes('som')?`
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--som);margin-bottom:4px">🎙 Sonido</div>
+            ${mkSel(key,'som','som',e.som,apoyoExtra)}
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--som);opacity:.7;margin-bottom:4px">🙋 Apoyo Sonido</div>
+            ${mkSel(key,'som_apoyo','som',e.som_apoyo,apoyoExtra)}
+          </div>`:''}
+        ${c.areas.includes('proj')?`
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--proj);margin-bottom:4px">📽 Proyector</div>
+            ${mkSel(key,'proj','proj',e.proj)}
+          </div>`:''}
+        ${c.areas.includes('trs')?`
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--trs);margin-bottom:4px">📡 Transmisión</div>
+            ${mkSel(key,'trs','trs',e.trs)}
+          </div>`:''}
+      </div>
+    </div>`;
   }).join('');
 }
 
 async function approveScale(){
   // Leer valores de la tabla editable
   const data={};
-  document.querySelectorAll('#esc-tbody .esel').forEach(s=>{
+  document.querySelectorAll('#esc-cards .esel').forEach(s=>{
     if(!data[s.dataset.key])data[s.dataset.key]={};
     data[s.dataset.key][s.dataset.area]=s.value;
   });
