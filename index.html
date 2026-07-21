@@ -700,6 +700,12 @@ select.inp option{background:var(--c2)}
       <div id="me-turns"></div>
     </div>
 
+    <!-- ESCALA DEL MES (todos) -->
+    <div class="pg" id="pg-escala-mes">
+      <div class="ph"><div class="ph-eye">Escala completa</div><div class="ph-title">Mes de <em id="escmes-title">—</em></div></div>
+      <div id="escmes-body"></div>
+    </div>
+
     <!-- MI DISPONIBILIDAD (vol) -->
     <div class="pg" id="pg-avail">
       <div class="ph"><div class="ph-eye">Mi disponibilidad</div><div class="ph-title"><em>Votación</em></div></div>
@@ -938,8 +944,9 @@ async function reloadApp(){
     if(pg.id==='pg-votos') renderVotos();
     if(pg.id==='pg-edit')  renderEdit();
     if(pg.id==='pg-cal')   renderCal();
-    if(pg.id==='pg-me')    renderMe();
-    if(pg.id==='pg-avail') renderAvail();
+    if(pg.id==='pg-me')         renderMe();
+    if(pg.id==='pg-escala-mes') renderEscalasMes();
+    if(pg.id==='pg-avail')      renderAvail();
   }
   toast('✅ Datos actualizados');
 }
@@ -1071,16 +1078,17 @@ function doLogout(){
 
 // ── BOTTOM NAV ──
 const ADM_TABS=[
-  {id:'pg-db',   ico:'📊',lbl:'Inicio'},
-  {id:'pg-vols', ico:'👥',lbl:'Equipo'},
-  {id:'pg-cultos',ico:'📅',lbl:'Cultos'},
-  {id:'pg-votos',ico:'🗳️',lbl:'Votos'},
-  {id:'pg-esc',  ico:'✨',lbl:'Escala'},
+  {id:'pg-db',         ico:'📊',lbl:'Inicio'},
+  {id:'pg-vols',       ico:'👥',lbl:'Equipo'},
+  {id:'pg-cultos',     ico:'📅',lbl:'Cultos'},
+  {id:'pg-votos',      ico:'🗳️',lbl:'Votos'},
+  {id:'pg-esc',        ico:'✨',lbl:'Escala'},
 ];
 const VOL_TABS=[
-  {id:'pg-me',   ico:'📋',lbl:'Mi Escala'},
-  {id:'pg-avail',ico:'🗳️',lbl:'Disponibilidad'},
-  {id:'pg-perfil',ico:'⚙️',lbl:'Perfil'},
+  {id:'pg-me',         ico:'📋',lbl:'Mi Escala'},
+  {id:'pg-escala-mes', ico:'📅',lbl:'Mes'},
+  {id:'pg-avail',      ico:'🗳️',lbl:'Votar'},
+  {id:'pg-perfil',     ico:'⚙️',lbl:'Perfil'},
 ];
 function buildNav(){
   const tabs=S.role==='adm'?ADM_TABS:VOL_TABS;
@@ -1108,8 +1116,9 @@ function navTo(id,title){
   if(id==='pg-votos') renderVotos();
   if(id==='pg-edit')  renderEdit();
   if(id==='pg-cal')   renderCal();
-  if(id==='pg-me')    renderMe();
-  if(id==='pg-avail') renderAvail();
+  if(id==='pg-me')         renderMe();
+  if(id==='pg-escala-mes') renderEscalasMes();
+  if(id==='pg-avail')      renderAvail();
   if(id==='pg-perfil')renderPerfil();
   document.querySelector('.scroll-area').scrollTop=0;
 }
@@ -2032,6 +2041,71 @@ function copyWA(){
 }
 
 // ── MI ESCALA ──
+function renderEscalasMes(){
+  const cultos=getCultos(S.year,S.month).filter(c=>c.date.getMonth()===S.month);
+  const sm=scaleMap();
+  const me=S.me; // puede ser null si es admin
+
+  document.getElementById('escmes-title').textContent=`${MES[S.month]} ${S.year}`;
+
+  if(!cultos.length){
+    document.getElementById('escmes-body').innerHTML=
+      '<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No hay cultos este mes.</div></div>';
+    return;
+  }
+
+  document.getElementById('escmes-body').innerHTML=cultos.map(c=>{
+    const key=cKey(c);
+    const e=sm[key];
+    const hasAssigned=e&&(e.som||e.proj||e.trs);
+
+    const mkPersona=(nombre, area, apoyo='')=>{
+      if(!nombre||nombre==='—') return '';
+      const v=S.vols.find(x=>x.name===nombre)||{id:Math.abs(nombre.charCodeAt(0)),name:nombre};
+      const isMe=me&&me.name===nombre;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;${isMe?'background:rgba(139,92,246,.08);border-radius:8px;padding:6px 8px;margin:-2px -4px;':''}">
+        ${avEl(v,28,7)}
+        <div>
+          <span style="font-size:13px;font-weight:${isMe?'700':'500'};color:${isMe?'var(--acc2)':'var(--tx)'}">${nombre}${isMe?' 👈':''}</span>
+          ${apoyo?`<span style="font-size:11px;color:var(--t2)"> + ${apoyo}</span>`:''}
+        </div>
+      </div>`;
+    };
+
+    return `<div class="culto-card" style="margin-bottom:8px">
+      <div class="cc-top">
+        <div class="cc-date">
+          <div class="cc-dn">${c.date.getDate()}</div>
+          <div class="cc-dm">${MES[c.date.getMonth()].slice(0,3)}</div>
+        </div>
+        <div class="cc-body">
+          <div class="cc-label">${c.label}${c.isExtra?` <span class="badge ev">Evento</span>`:''}</div>
+          <div class="cc-dia">${c.dia}</div>
+        </div>
+      </div>
+      <div style="padding:10px 14px;border-top:1px solid var(--bd)">
+        ${hasAssigned?`
+          ${e.som&&c.areas.includes('som')?`
+          <div style="margin-bottom:4px">
+            <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--som)">🎙 Sonido</span>
+            ${mkPersona(e.som,'som',e.som_apoyo)}
+          </div>`:''}
+          ${e.proj&&c.areas.includes('proj')?`
+          <div style="margin-bottom:4px">
+            <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--proj)">📽 Proyector</span>
+            ${mkPersona(e.proj,'proj')}
+          </div>`:''}
+          ${e.trs&&c.areas.includes('trs')?`
+          <div>
+            <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--trs)">📡 Transmisión</span>
+            ${mkPersona(e.trs,'trs')}
+          </div>`:''}
+        `:`<div style="font-size:11px;color:var(--t3);font-style:italic">Escala pendiente</div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function renderMe(){
   if(!S.me)return;
   const v=S.me;
