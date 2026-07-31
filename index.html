@@ -750,6 +750,14 @@ select.inp option{background:var(--c2)}
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-h" id="mv-title">Agregar voluntario</div>
+    <!-- Foto de perfil -->
+    <div style="display:flex;justify-content:center;margin-bottom:16px">
+      <div style="position:relative;display:inline-block">
+        <div id="mv-avatar-preview" style="width:64px;height:64px;border-radius:16px;background:var(--c3);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--t2)">👤</div>
+        <label for="mv-avatar-inp" style="position:absolute;bottom:-4px;right:-4px;width:24px;height:24px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;box-shadow:0 2px 8px rgba(0,0,0,.4)">📷</label>
+        <input type="file" id="mv-avatar-inp" accept="image/*" style="display:none" onchange="previewMVAvatar(event)">
+      </div>
+    </div>
     <div class="fld"><label>Nombre completo</label><input class="inp" id="mv-name" type="text" placeholder="Ej: María González"></div>
     <div class="fld"><label>PIN personal (4 dígitos)</label><input class="inp" id="mv-pin" type="number" min="1000" max="9999" placeholder="1234"></div>
     <div class="fld"><label>Áreas</label>
@@ -759,7 +767,7 @@ select.inp option{background:var(--c2)}
         <label class="sk trs"><input type="checkbox" id="mv-trs"> 📡 Transmisión</label>
       </div>
     </div>
-    <div class="fld"><label>Observaciones para la IA</label><input class="inp" id="mv-obs" type="text" placeholder="Ej: No disponible lunes"></div>
+    <div class="fld"><label>Observaciones</label><input class="inp" id="mv-obs" type="text" placeholder="Ej: No disponible lunes"></div>
     <div class="modal-ft">
       <button class="btn btn-pri btn-blk" onclick="saveVol()">Guardar</button>
       <button class="btn btn-gh btn-blk" onclick="closeOv('ov-vol')">Cancelar</button>
@@ -1224,8 +1232,24 @@ function ccHTML(c,acts=true){
 }
 
 // ── VOLUNTARIOS ──
+let _mvAvatarData = null; // temporal para la foto en el modal
+
+function previewMVAvatar(e){
+  const file=e.target.files[0];if(!file)return;
+  if(file.size>2*1024*1024){toast('⚠️ Imagen menor de 2MB');return;}
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    _mvAvatarData=ev.target.result;
+    const prev=document.getElementById('mv-avatar-preview');
+    prev.innerHTML=`<img src="${_mvAvatarData}" style="width:64px;height:64px;border-radius:16px;object-fit:cover">`;
+  };
+  reader.readAsDataURL(file);
+}
+
 function openMV(id){
-  S.editVId=id;const v=id?S.vols.find(x=>x.id===id):null;
+  S.editVId=id;
+  _mvAvatarData=null;
+  const v=id?S.vols.find(x=>x.id===id):null;
   document.getElementById('mv-title').textContent=v?'Editar voluntario':'Agregar voluntario';
   document.getElementById('mv-name').value=v?.name||'';
   document.getElementById('mv-pin').value=v?.pin||'';
@@ -1233,8 +1257,17 @@ function openMV(id){
   document.getElementById('mv-som').checked=v?.skills.includes('som')||false;
   document.getElementById('mv-proj').checked=v?.skills.includes('proj')||false;
   document.getElementById('mv-trs').checked=v?.skills.includes('trs')||false;
+  // Mostrar foto actual si tiene
+  const prev=document.getElementById('mv-avatar-preview');
+  if(v?.avatar){
+    prev.innerHTML=`<img src="${v.avatar}" style="width:64px;height:64px;border-radius:16px;object-fit:cover">`;
+  } else {
+    const c=avC((v?.id||0)%AVC.length);
+    prev.innerHTML=v?`<div style="width:64px;height:64px;border-radius:16px;background:${c}22;color:${c};display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">${avI(v.name)}</div>`:'<div style="width:64px;height:64px;border-radius:16px;background:var(--c3);display:flex;align-items:center;justify-content:center;font-size:24px">👤</div>';
+  }
   openOv('ov-vol');
 }
+
 async function saveVol(){
   const name=document.getElementById('mv-name').value.trim();
   const pin=document.getElementById('mv-pin').value.trim();
@@ -1246,12 +1279,16 @@ async function saveVol(){
   if(document.getElementById('mv-trs').checked)skills.push('trs');
   if(!skills.length){toast('⚠️ Selecciona al menos un área');return;}
   const obs=document.getElementById('mv-obs').value.trim();
+  const avatar=_mvAvatarData||undefined;
   try{
     if(S.editVId){
-      await sbUpdate('voluntarios',{id:S.editVId},{name,pin,skills,obs});
+      const patch={name,pin,skills,obs};
+      if(avatar) patch.avatar=avatar;
+      await sbUpdate('voluntarios',{id:S.editVId},patch);
       const i=S.vols.findIndex(v=>v.id===S.editVId);
-      if(i>=0)S.vols[i]={...S.vols[i],name,pin,skills,obs};
+      if(i>=0)S.vols[i]={...S.vols[i],name,pin,skills,obs,...(avatar?{avatar}:{})};
       toast('✅ Voluntario actualizado');
+
     }else{
       const [row]=await sbInsert('voluntarios',[{name,pin,skills,obs}]);
       S.vols.push({id:row.id,name,pin,skills,obs});
@@ -1585,10 +1622,15 @@ async function genScale(){
   document.getElementById('lbar').classList.add('on');
   document.getElementById('esc-out').style.display='none';
 
+  // Contador de regeneraciones para rotar el punto de inicio
+  S._genCount=(S._genCount||0)+1;
+  const offset=S._genCount-1;
+
   const turnCount={};
   S.vols.forEach(v=>{ turnCount[v.id]={total:0,som:0,proj:0,trs:0}; });
 
   const avail={};
+  const hayVotos=S.vols.some(v=>(S.avail[`${v.id}-${S.month}-${S.year}`]||[]).length>0);
   S.vols.forEach(v=>{
     const key=`${v.id}-${S.month}-${S.year}`;
     const days=S.avail[key]||[];
@@ -1600,23 +1642,30 @@ async function genScale(){
     let candidates=S.vols.filter(v=>{
       if(!v.skills.includes(area)) return false;
       if(assigned.includes(v.id)) return false;
-      if(avail[v.id].length>0 && !avail[v.id].includes(day)) return false;
+      // Si hay votos en el sistema, solo asignar a quienes votaron ese día
+      if(hayVotos){
+        if(avail[v.id].length===0) return false; // no votó = no asignar
+        if(!avail[v.id].includes(day)) return false; // votó pero no ese día
+      }
       return true;
     });
+    // Si nadie disponible con votos, buscar sin restricción de votos
     if(!candidates.length){
       candidates=S.vols.filter(v=>v.skills.includes(area)&&!assigned.includes(v.id));
     }
     if(!candidates.length) return null;
+    // Rotar punto de inicio según número de regeneración para variar resultados
     candidates.sort((a,b)=>{
       const ta=turnCount[a.id]?.[area]||0;
       const tb=turnCount[b.id]?.[area]||0;
       if(ta!==tb) return ta-tb;
-      return (turnCount[a.id]?.total||0)-(turnCount[b.id]?.total||0);
+      const ia=S.vols.findIndex(x=>x.id===a.id);
+      const ib=S.vols.findIndex(x=>x.id===b.id);
+      return ((ia+offset)%S.vols.length)-((ib+offset)%S.vols.length);
     });
     return candidates[0];
   }
 
-  // Guardar propuesta en variable temporal (no en Supabase aún)
   S._pendingScale=[];
   cultos.forEach(c=>{
     const assigned=[];
@@ -1645,16 +1694,28 @@ async function genScale(){
   toast('✅ Propuesta generada — revisa y aprueba');
 }
 
+// Devuelve vols con esa habilidad que votaron Sí ese día (o todos si nadie votó)
+function volsDisponibles(sk, day, month, year){
+  const hayVotos=S.vols.some(v=>(S.avail[`${v.id}-${month}-${year}`]||[]).length>0);
+  const todos=S.vols.filter(v=>v.skills.includes(sk));
+  if(!hayVotos) return todos;
+  const disponibles=todos.filter(v=>{
+    const dias=S.avail[`${v.id}-${month}-${year}`]||[];
+    return dias.includes(day); // solo los que votaron Sí ese día
+  });
+  return disponibles.length>0?disponibles:todos; // fallback a todos si nadie disponible
+}
+
 function renderEscaTbody(cultos){
   if(!cultos) cultos=getCultos(S.year,S.month).filter(c=>c.date.getMonth()===S.month);
   const pending=S._pendingScale||[];
-  const vBySk=sk=>S.vols.filter(v=>v.skills.includes(sk));
 
-  const mkSel=(key,area,sk,curVal,extraOpts='')=>{
+  const mkSel=(key,area,sk,curVal,day,month,year,extraOpts='')=>{
+    const vols=volsDisponibles(sk,day,month,year);
     return `<select class="esel inp" data-key="${key}" data-area="${area}" style="font-size:13px;padding:8px 10px">
       <option value="">— Sin asignar —</option>
       ${extraOpts}
-      ${vBySk(sk).map(v=>`<option ${curVal===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
+      ${vols.map(v=>`<option ${curVal===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
     </select>`;
   };
 
@@ -1662,6 +1723,7 @@ function renderEscaTbody(cultos){
     const key=`${e.d}-${e.m}-${e.y}`;
     const isLun=c.type==='lun';
     const apoyoExtra=isLun?`<option value="Apoyo">🙋 Apoyo</option>`:'';
+    const d=e.d,m=e.m,y=e.y;
 
     return `<div class="culto-card" style="margin-bottom:8px">
       <div class="cc-top">
@@ -1678,21 +1740,21 @@ function renderEscaTbody(cultos){
         ${c.areas.includes('som')?`
           <div>
             <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--som);margin-bottom:4px">🎙 Sonido</div>
-            ${mkSel(key,'som','som',e.som,apoyoExtra)}
+            ${mkSel(key,'som','som',e.som,d,m,y,apoyoExtra)}
           </div>
           <div>
             <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--som);opacity:.7;margin-bottom:4px">🙋 Apoyo Sonido</div>
-            ${mkSel(key,'som_apoyo','som',e.som_apoyo,apoyoExtra)}
+            ${mkSel(key,'som_apoyo','som',e.som_apoyo,d,m,y,apoyoExtra)}
           </div>`:''}
         ${c.areas.includes('proj')?`
           <div>
             <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--proj);margin-bottom:4px">📽 Proyector</div>
-            ${mkSel(key,'proj','proj',e.proj)}
+            ${mkSel(key,'proj','proj',e.proj,d,m,y)}
           </div>`:''}
         ${c.areas.includes('trs')?`
           <div>
             <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--trs);margin-bottom:4px">📡 Transmisión</div>
-            ${mkSel(key,'trs','trs',e.trs)}
+            ${mkSel(key,'trs','trs',e.trs,d,m,y)}
           </div>`:''}
       </div>
     </div>`;
@@ -1763,30 +1825,31 @@ function cKey(c){ return `${c.date.getDate()}-${c.date.getMonth()}-${c.date.getF
 function renderEdit(){
   const cultos=getCultos(S.year,S.month);
   const sm=scaleMap();
-  const vBySk=sk=>S.vols.filter(v=>v.skills.includes(sk));
 
-  const mkSel=(key,area,sk,cls,extraOpts='')=>{
+  const mkSel=(key,area,sk,extraOpts='')=>{
     const culto=cultos.find(c=>cKey(c)===key);
-    if(!culto?.areas.includes(area))return`<td style="text-align:center;color:var(--t3);font-size:11px">—</td>`;
+    if(!culto?.areas.includes(area)) return`<td style="text-align:center;color:var(--t3);font-size:11px">—</td>`;
+    const [d,m,y]=key.split('-').map(Number);
     const cur=sm[key]?.[area]||'';
+    const vols=volsDisponibles(sk,d,m,y);
     return `<td><select class="esel" data-key="${key}" data-area="${area}">
       <option value="">—</option>
       ${extraOpts}
-      ${vBySk(sk).map(v=>`<option ${cur===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
+      ${vols.map(v=>`<option ${cur===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
     </select></td>`;
   };
 
-  const mkApoyoCell=(key,culto)=>{
-    if(!culto.areas.includes('som')) return '<td>—</td>';
+  const mkApoyoSel=(key,culto)=>{
+    if(!culto.areas.includes('som')) return '<td style="text-align:center;color:var(--t3);font-size:11px">—</td>';
+    const [d,m,y]=key.split('-').map(Number);
     const cur=sm[key]?.som_apoyo||'';
     const isLun=culto.type==='lun';
-    return `<td>
-      <select class="esel" data-key="${key}" data-area="som_apoyo" style="min-width:120px">
-        <option value="">—</option>
-        ${isLun?`<option ${cur==='Apoyo'?'selected':''} value="Apoyo">🙋 Apoyo</option>`:''}
-        ${S.vols.filter(v=>v.skills.includes('som')).map(v=>`<option ${cur===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
-      </select>
-    </td>`;
+    const vols=volsDisponibles('som',d,m,y);
+    return `<td><select class="esel" data-key="${key}" data-area="som_apoyo">
+      <option value="">—</option>
+      ${isLun?`<option ${cur==='Apoyo'?'selected':''} value="Apoyo">🙋 Apoyo</option>`:''}
+      ${vols.map(v=>`<option ${cur===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
+    </select></td>`;
   };
 
   document.getElementById('etbl-body').innerHTML=cultos.map(c=>{
@@ -1796,16 +1859,10 @@ function renderEdit(){
     return `<tr${fueraMes?' style="opacity:.55"':''}>
       <td style="font-weight:700;font-size:12px;white-space:nowrap;color:var(--tx)">${c.date.getDate()} ${MES[c.date.getMonth()].slice(0,3)}</td>
       <td><div style="font-size:12px;font-weight:600;color:var(--tx)">${c.label}${fueraMes?' <span class="badge ev">Sig. mes</span>':''}</div><div style="font-size:10px;color:var(--t3)">${c.dia}</div></td>
-      ${mkSel(key,'som','som','som', isLun?`<option ${(sm[key]?.som==='Apoyo')?'selected':''} value="Apoyo">🙋 Apoyo</option>`:'')}
-      <td>
-        <select class="esel" data-key="${key}" data-area="som_apoyo" style="min-width:110px">
-          <option value="">+ Apoyo som</option>
-          ${isLun?`<option ${(sm[key]?.som_apoyo==='Apoyo')?'selected':''} value="Apoyo">🙋 Apoyo</option>`:''}
-          ${S.vols.filter(v=>v.skills.includes('som')).map(v=>`<option ${(sm[key]?.som_apoyo===v.name)?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
-        </select>
-      </td>
-      ${mkSel(key,'proj','proj','proj')}
-      ${mkSel(key,'trs','trs','trs')}
+      ${mkSel(key,'som','som', isLun?`<option ${(sm[key]?.som==='Apoyo')?'selected':''} value="Apoyo">🙋 Apoyo</option>`:'')}
+      ${mkApoyoSel(key,c)}
+      ${mkSel(key,'proj','proj')}
+      ${mkSel(key,'trs','trs')}
     </tr>`;
   }).join('');
 }
@@ -1892,10 +1949,10 @@ function openDay(key){
 
   document.getElementById('mdia-h').textContent=`${kd} ${MES[km]} ${ky}${culto?' — '+diaName:''}`;
 
-  const vBySk=sk=>S.vols.filter(v=>v.skills.includes(sk));
   const mkSel=(area,sk,lbl)=>{
     const cur=entry[area]||'';
     const active=curAreas.includes(area);
+    const vols=volsDisponibles(sk,kd,km,ky);
     return `<div class="fld" id="fld-${area}" style="${active?'':'opacity:.4'}">
       <label style="display:flex;align-items:center;gap:8px">
         <input type="checkbox" id="chk-${area}" ${active?'checked':''} onchange="toggleAreaFld('${area}')">
@@ -1903,7 +1960,7 @@ function openDay(key){
       </label>
       <select class="inp" id="md-${area}" ${active?'':'disabled'}>
         <option value="">Sin asignar</option>
-        ${vBySk(sk).map(v=>`<option ${cur===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
+        ${vols.map(v=>`<option ${cur===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
       </select>
     </div>`;
   };
