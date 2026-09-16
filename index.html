@@ -1711,7 +1711,8 @@ function renderEscaTbody(cultos){
   const pending=S._pendingScale||[];
 
   const mkSel=(key,area,sk,curVal,day,month,year,extraOpts='')=>{
-    const vols=volsDisponibles(sk,day,month,year);
+    // Al revisar/editar la propuesta: todos los que saben el área
+    const vols=S.vols.filter(v=>v.skills.includes(sk));
     return `<select class="esel inp" data-key="${key}" data-area="${area}" style="font-size:13px;padding:8px 10px">
       <option value="">— Sin asignar —</option>
       ${extraOpts}
@@ -1762,7 +1763,6 @@ function renderEscaTbody(cultos){
 }
 
 async function approveScale(){
-  // Leer valores de la tabla editable
   const data={};
   document.querySelectorAll('#esc-cards .esel').forEach(s=>{
     if(!data[s.dataset.key])data[s.dataset.key]={};
@@ -1771,11 +1771,29 @@ async function approveScale(){
 
   const cultos=getCultos(S.year,S.month).filter(c=>c.date.getMonth()===S.month);
   const result=[];
+  const histRows=[];
+
   cultos.forEach(c=>{
     const key=`${c.date.getDate()}-${c.date.getMonth()}-${c.date.getFullYear()}`;
     const areas=data[key]||{};
     result.push({d:c.date.getDate(),m:c.date.getMonth(),y:c.date.getFullYear(),
       som:areas.som||'',proj:areas.proj||'',trs:areas.trs||'',som_apoyo:areas.som_apoyo||''});
+
+    // Guardar en historial: quién fue asignado a qué área en qué tipo de culto
+    const dow=c.date.getDay();
+    ['som','proj','trs'].forEach(area=>{
+      const nombre=areas[area];
+      if(nombre && nombre!=='—' && nombre!=='Apoyo'){
+        histRows.push({
+          voluntario:nombre,
+          area,
+          dia_semana:dow,
+          tipo_culto:c.type,
+          mes:c.date.getMonth(),
+          anio:c.date.getFullYear()
+        });
+      }
+    });
   });
 
   const keys=new Set(cultos.map(c=>cKey(c)));
@@ -1787,14 +1805,36 @@ async function approveScale(){
       dia:p.d,mes:p.m,anio:p.y,
       som:p.som,proj:p.proj,trs:p.trs,som_apoyo:p.som_apoyo
     })),'dia,mes,anio');
+
+    // Guardar historial en Supabase
+    if(histRows.length){
+      await sbInsert('historial', histRows);
+    }
+
+    // Actualizar historial local en memoria
+    if(!S.historial) S.historial=[];
+    S.historial.push(...histRows);
+
     renderCal();renderDB();
-    toast('✅ Escala aprobada y guardada');
-    // Limpiar propuesta temporal
+    toast('✅ Escala aprobada y guardada — el sistema aprendió de tus cambios');
     S._pendingScale=null;
   }catch(e){
     console.error(e);
     toast('❌ Error guardando la escala');
   }
+}
+
+// Calcular peso de un voluntario para un área/culto basado en historial
+function pesoHistorial(volName, area, dow, tipoCulto){
+  if(!S.historial||!S.historial.length) return 0;
+  // Contar cuántas veces fue asignado en esa área y tipo de culto
+  const total=S.historial.filter(h=>
+    h.voluntario===volName &&
+    h.area===area &&
+    h.dia_semana===dow &&
+    h.tipo_culto===tipoCulto
+  ).length;
+  return total;
 }
 
 function renderResumen(turnCount){
@@ -1826,12 +1866,14 @@ function renderEdit(){
   const cultos=getCultos(S.year,S.month);
   const sm=scaleMap();
 
+  // En edición manual: TODOS los que saben el área, sin filtrar por votos
+  const vBySk=sk=>S.vols.filter(v=>v.skills.includes(sk));
+
   const mkSel=(key,area,sk,extraOpts='')=>{
     const culto=cultos.find(c=>cKey(c)===key);
     if(!culto?.areas.includes(area)) return`<td style="text-align:center;color:var(--t3);font-size:11px">—</td>`;
-    const [d,m,y]=key.split('-').map(Number);
     const cur=sm[key]?.[area]||'';
-    const vols=volsDisponibles(sk,d,m,y);
+    const vols=vBySk(sk);
     return `<td><select class="esel" data-key="${key}" data-area="${area}">
       <option value="">—</option>
       ${extraOpts}
@@ -1841,10 +1883,9 @@ function renderEdit(){
 
   const mkApoyoSel=(key,culto)=>{
     if(!culto.areas.includes('som')) return '<td style="text-align:center;color:var(--t3);font-size:11px">—</td>';
-    const [d,m,y]=key.split('-').map(Number);
     const cur=sm[key]?.som_apoyo||'';
     const isLun=culto.type==='lun';
-    const vols=volsDisponibles('som',d,m,y);
+    const vols=vBySk('som');
     return `<td><select class="esel" data-key="${key}" data-area="som_apoyo">
       <option value="">—</option>
       ${isLun?`<option ${cur==='Apoyo'?'selected':''} value="Apoyo">🙋 Apoyo</option>`:''}
@@ -1952,7 +1993,8 @@ function openDay(key){
   const mkSel=(area,sk,lbl)=>{
     const cur=entry[area]||'';
     const active=curAreas.includes(area);
-    const vols=volsDisponibles(sk,kd,km,ky);
+    // En edición directa: todos los que saben el área, sin filtrar por votos
+    const vols=S.vols.filter(v=>v.skills.includes(sk));
     return `<div class="fld" id="fld-${area}" style="${active?'':'opacity:.4'}">
       <label style="display:flex;align-items:center;gap:8px">
         <input type="checkbox" id="chk-${area}" ${active?'checked':''} onchange="toggleAreaFld('${area}')">
