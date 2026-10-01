@@ -619,6 +619,47 @@ select.inp option{background:var(--c2)}
       <div id="votos-list"></div>
     </div>
 
+    <!-- GENERAR ESCALA -->
+    <div class="pg" id="pg-esc">
+      <div class="ph"><div class="ph-eye">Algoritmo automático</div><div class="ph-title">Generar <em>Escala</em></div></div>
+      <div class="ai-box">
+        <div class="ai-pill"><div class="ai-dot"></div> Listo para generar</div>
+        <div class="ai-h">Escala del mes</div>
+        <div class="ai-d">El sistema distribuye automáticamente según habilidades y disponibilidad votada. Podrás revisar y editar antes de guardar.</div>
+        <div class="ai-acts">
+          <button class="btn btn-ok btn-blk" onclick="genScale()">⚡ Generar propuesta</button>
+        </div>
+        <div class="lbar" id="lbar"><div class="lfill"></div></div>
+      </div>
+
+      <!-- PROPUESTA PARA REVISAR -->
+      <div id="esc-out" style="display:none">
+        <div class="card" style="border-color:rgba(247,183,49,.3);background:rgba(247,183,49,.04);margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span style="font-size:20px">⚠️</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--proj)">Revisa antes de guardar</div>
+              <div style="font-size:11px;color:var(--t2)">Edita los turnos directamente en la tabla. Cuando esté todo correcto, aprueba.</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ok btn-blk" onclick="approveScale()">✅ Aprobar y guardar</button>
+            <button class="btn btn-gh btn-blk" onclick="copyWA()">📲 Copiar para WhatsApp</button>
+            <button class="btn btn-ghost btn-blk" onclick="genScale()">🔄 Regenerar</button>
+          </div>
+        </div>
+
+        <!-- TARJETAS EDITABLES INLINE -->
+        <div id="esc-cards" style="margin-bottom:8px"></div>
+
+        <div class="card mt">
+          <div class="ct">Resumen por voluntario</div>
+          <div class="res-list" id="res-list"></div>
+        </div>
+      </div>
+    </div>
+
+
     <!-- EDITAR ESCALA -->
     <div class="pg" id="pg-edit">
       <div class="ph"><div class="ph-eye">Edición manual</div><div class="ph-title">Editar <em>Escala</em></div></div>
@@ -1049,7 +1090,7 @@ const ADM_TABS=[
   {id:'pg-vols',       ico:'👥',lbl:'Equipo'},
   {id:'pg-cultos',     ico:'📅',lbl:'Cultos'},
   {id:'pg-votos',      ico:'🗳️',lbl:'Votos'},
-  {id:'pg-edit',       ico:'✏️',lbl:'Escala'},
+  {id:'pg-esc',        ico:'✨',lbl:'Escala'},
 ];
 const VOL_TABS=[
   {id:'pg-me',         ico:'📋',lbl:'Mi Escala'},
@@ -1065,7 +1106,12 @@ function buildNav(){
       <span class="bn-lbl">${t.lbl}</span>
     </button>`).join('');
 }
-function navTo(id,title){
+async function navTo(id,title){
+  // Los voluntarios recargan los datos al entrar en sus pantallas para
+  // ver inmediatamente los cambios que haga el administrador.
+  if(S.role==='vol' && ['pg-me','pg-escala-mes','pg-avail'].includes(id)){
+    await ld();
+  }
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.bn').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
   document.getElementById(id).classList.add('on');
@@ -1533,6 +1579,11 @@ function renderAvail(){
 }
 
 function voteDay(d, voto, key){
+  // El voluntario puede modificar sus respuestas mientras la votación esté abierta.
+  if(!votacionEstaAbierta()){
+    toast('🔒 La votación ya está cerrada por el administrador');
+    return;
+  }
   let saved=S.avail[key]||[];
   // Limpiar votos anteriores para este día
   saved=saved.filter(x=>Math.abs(x)!==d);
@@ -1564,12 +1615,262 @@ function voteDay(d, voto, key){
 
 function toggleDay(d,key){ voteDay(d,'si',key); } // legacy compat
 async function saveAvail(key,vm,vy){
+  // Impedir cambios una vez cerrada la votación.
+  if(!votacionEstaAbierta()){
+    toast('🔒 La votación está cerrada. Ya no puedes modificar tus respuestas.');
+    renderAvail();
+    return;
+  }
   const saved=S.avail[key]||[];
   const [voluntario_id] = key.split('-').map(Number);
   try{
     await sbUpsert('disponibilidad',[{voluntario_id, mes:vm, anio:vy, dias:saved}], 'voluntario_id,mes,anio');
     toast(`✅ ${saved.length} día(s) guardado(s) para ${MES[vm]}`);
   }catch(e){console.error(e);toast('❌ Error guardando disponibilidad');}
+}
+
+// ── AI SCALE ──
+async function genScale(){
+  if(!S.vols.length){toast('⚠️ Agrega voluntarios primero');return;}
+  const cultos=getCultos(S.year,S.month).filter(c=>c.date.getMonth()===S.month);
+  if(!cultos.length){toast('⚠️ No hay cultos este mes');return;}
+
+  document.getElementById('lbar').classList.add('on');
+  document.getElementById('esc-out').style.display='none';
+
+  // Contador de regeneraciones para rotar el punto de inicio
+  S._genCount=(S._genCount||0)+1;
+  const offset=S._genCount-1;
+
+  const turnCount={};
+  S.vols.forEach(v=>{ turnCount[v.id]={total:0,som:0,proj:0,trs:0}; });
+
+  const avail={};
+  const hayVotos=S.vols.some(v=>(S.avail[`${v.id}-${S.month}-${S.year}`]||[]).length>0);
+  S.vols.forEach(v=>{
+    const key=`${v.id}-${S.month}-${S.year}`;
+    const days=S.avail[key]||[];
+    avail[v.id]=days.filter(d=>d>0);
+  });
+
+  function bestVol(area, date, assigned){
+    const day=date.getDate();
+    let candidates=S.vols.filter(v=>{
+      if(!v.skills.includes(area)) return false;
+      if(assigned.includes(v.id)) return false;
+      // Si hay votos en el sistema, solo asignar a quienes votaron ese día
+      if(hayVotos){
+        if(avail[v.id].length===0) return false; // no votó = no asignar
+        if(!avail[v.id].includes(day)) return false; // votó pero no ese día
+      }
+      return true;
+    });
+    // Si nadie disponible con votos, buscar sin restricción de votos
+    if(!candidates.length){
+      candidates=S.vols.filter(v=>v.skills.includes(area)&&!assigned.includes(v.id));
+    }
+    if(!candidates.length) return null;
+    // Rotar punto de inicio según número de regeneración para variar resultados
+    candidates.sort((a,b)=>{
+      const ta=turnCount[a.id]?.[area]||0;
+      const tb=turnCount[b.id]?.[area]||0;
+      if(ta!==tb) return ta-tb;
+      const ia=S.vols.findIndex(x=>x.id===a.id);
+      const ib=S.vols.findIndex(x=>x.id===b.id);
+      return ((ia+offset)%S.vols.length)-((ib+offset)%S.vols.length);
+    });
+    return candidates[0];
+  }
+
+  S._pendingScale=[];
+  cultos.forEach(c=>{
+    const assigned=[];
+    const entry={d:c.date.getDate(),m:c.date.getMonth(),y:c.date.getFullYear(),som:'',proj:'',trs:'',som_apoyo:''};
+    ['som','proj','trs'].forEach(area=>{
+      if(!c.areas.includes(area)) return;
+      const v=bestVol(area,c.date,assigned);
+      if(v){
+        entry[area]=v.name;
+        assigned.push(v.id);
+        turnCount[v.id].total++;
+        turnCount[v.id][area]++;
+      }
+    });
+    // Lunes sin nadie → poner "Apoyo" por defecto
+    if(c.type==='lun' && !entry.som) entry.som='Apoyo';
+    S._pendingScale.push({culto:c, entry});
+  });
+
+  document.getElementById('lbar').classList.remove('on');
+  document.getElementById('esc-out').style.display='block';
+
+  // Renderizar tabla editable de propuesta
+  renderEscaTbody(cultos);
+  renderResumen(turnCount);
+  toast('✅ Propuesta generada — revisa y aprueba');
+}
+
+// Devuelve vols con esa habilidad que votaron Sí ese día (o todos si nadie votó)
+function volsDisponibles(sk, day, month, year){
+  const hayVotos=S.vols.some(v=>(S.avail[`${v.id}-${month}-${year}`]||[]).length>0);
+  const todos=S.vols.filter(v=>v.skills.includes(sk));
+  if(!hayVotos) return todos;
+  const disponibles=todos.filter(v=>{
+    const dias=S.avail[`${v.id}-${month}-${year}`]||[];
+    return dias.includes(day); // solo los que votaron Sí ese día
+  });
+  return disponibles.length>0?disponibles:todos; // fallback a todos si nadie disponible
+}
+
+function renderEscaTbody(cultos){
+  if(!cultos) cultos=getCultos(S.year,S.month).filter(c=>c.date.getMonth()===S.month);
+  const pending=S._pendingScale||[];
+
+  const mkSel=(key,area,sk,curVal,day,month,year,extraOpts='')=>{
+    // Al revisar/editar la propuesta: todos los que saben el área
+    const vols=S.vols.filter(v=>v.skills.includes(sk));
+    return `<select class="esel inp" data-key="${key}" data-area="${area}" style="font-size:13px;padding:8px 10px">
+      <option value="">— Sin asignar —</option>
+      ${extraOpts}
+      ${vols.map(v=>`<option ${curVal===v.name?'selected':''} value="${v.name}">${v.name}</option>`).join('')}
+    </select>`;
+  };
+
+  document.getElementById('esc-cards').innerHTML=pending.map(({culto:c,entry:e})=>{
+    const key=`${e.d}-${e.m}-${e.y}`;
+    const isLun=c.type==='lun';
+    const apoyoExtra=isLun?`<option value="Apoyo">🙋 Apoyo</option>`:'';
+    const d=e.d,m=e.m,y=e.y;
+
+    return `<div class="culto-card" style="margin-bottom:8px">
+      <div class="cc-top">
+        <div class="cc-date">
+          <div class="cc-dn">${c.date.getDate()}</div>
+          <div class="cc-dm">${MES[c.date.getMonth()].slice(0,3)}</div>
+        </div>
+        <div class="cc-body" style="padding-bottom:0">
+          <div class="cc-label">${c.label}</div>
+          <div class="cc-dia">${c.dia}</div>
+        </div>
+      </div>
+      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--bd)">
+        ${c.areas.includes('som')?`
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--som);margin-bottom:4px">🎙 Sonido</div>
+            ${mkSel(key,'som','som',e.som,d,m,y,apoyoExtra)}
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--som);opacity:.7;margin-bottom:4px">🙋 Apoyo Sonido</div>
+            ${mkSel(key,'som_apoyo','som',e.som_apoyo,d,m,y,apoyoExtra)}
+          </div>`:''}
+        ${c.areas.includes('proj')?`
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--proj);margin-bottom:4px">📽 Proyector</div>
+            ${mkSel(key,'proj','proj',e.proj,d,m,y)}
+          </div>`:''}
+        ${c.areas.includes('trs')?`
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--trs);margin-bottom:4px">📡 Transmisión</div>
+            ${mkSel(key,'trs','trs',e.trs,d,m,y)}
+          </div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function approveScale(){
+  const data={};
+  document.querySelectorAll('#esc-cards .esel').forEach(s=>{
+    if(!data[s.dataset.key])data[s.dataset.key]={};
+    data[s.dataset.key][s.dataset.area]=s.value;
+  });
+
+  const cultos=getCultos(S.year,S.month).filter(c=>c.date.getMonth()===S.month);
+  const result=[];
+  const histRows=[];
+
+  cultos.forEach(c=>{
+    const key=`${c.date.getDate()}-${c.date.getMonth()}-${c.date.getFullYear()}`;
+    const areas=data[key]||{};
+    result.push({d:c.date.getDate(),m:c.date.getMonth(),y:c.date.getFullYear(),
+      som:areas.som||'',proj:areas.proj||'',trs:areas.trs||'',som_apoyo:areas.som_apoyo||''});
+
+    // Guardar en historial: quién fue asignado a qué área en qué tipo de culto
+    const dow=c.date.getDay();
+    ['som','proj','trs'].forEach(area=>{
+      const nombre=areas[area];
+      if(nombre && nombre!=='—' && nombre!=='Apoyo'){
+        histRows.push({
+          voluntario:nombre,
+          area,
+          dia_semana:dow,
+          tipo_culto:c.type,
+          mes:c.date.getMonth(),
+          anio:c.date.getFullYear()
+        });
+      }
+    });
+  });
+
+  const keys=new Set(cultos.map(c=>cKey(c)));
+  S.scale=S.scale.filter(s=>!keys.has(`${s.d}-${s.m}-${s.y}`));
+  S.scale.push(...result);
+
+  try{
+    await sbUpsert('escala',result.map(p=>({
+      dia:p.d,mes:p.m,anio:p.y,
+      som:p.som,proj:p.proj,trs:p.trs,som_apoyo:p.som_apoyo
+    })),'dia,mes,anio');
+
+    // Guardar historial en Supabase
+    if(histRows.length){
+      await sbInsert('historial', histRows);
+    }
+
+    // Actualizar historial local en memoria
+    if(!S.historial) S.historial=[];
+    S.historial.push(...histRows);
+
+    renderCal();renderDB();
+    toast('✅ Escala aprobada y guardada — el sistema aprendió de tus cambios');
+    S._pendingScale=null;
+  }catch(e){
+    console.error(e);
+    toast('❌ Error guardando la escala');
+  }
+}
+
+// Calcular peso de un voluntario para un área/culto basado en historial
+function pesoHistorial(volName, area, dow, tipoCulto){
+  if(!S.historial||!S.historial.length) return 0;
+  // Contar cuántas veces fue asignado en esa área y tipo de culto
+  const total=S.historial.filter(h=>
+    h.voluntario===volName &&
+    h.area===area &&
+    h.dia_semana===dow &&
+    h.tipo_culto===tipoCulto
+  ).length;
+  return total;
+}
+
+function renderResumen(turnCount){
+  document.getElementById('res-list').innerHTML=S.vols
+    .filter(v=>turnCount[v.id]?.total>0)
+    .sort((a,b)=>turnCount[b.id].total-turnCount[a.id].total)
+    .map(v=>{
+      const t=turnCount[v.id];
+      return `<div class="res-card">
+        ${avEl(v,32,8)}
+        <div class="res-info">
+          <div class="res-name">${v.name}</div>
+          <div class="res-detail">${t.total} turno(s)
+            ${t.som?`· 🎙 ${t.som}`:''}
+            ${t.proj?`· 📽 ${t.proj}`:''}
+            ${t.trs?`· 📡 ${t.trs}`:''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
 }
 
 // ── EDIT TABLE ──
@@ -2194,6 +2495,21 @@ function toast(msg,dur=2800){
     startY=0;pulling=false;triggered=false;
   },{passive:true});
 })();
+
+// ── ACTUALIZACIÓN AUTOMÁTICA PARA VOLUNTARIOS ──
+// Si el administrador cambia la escala, el voluntario la verá sin tener que
+// cerrar sesión. Se comprueba cada 30 segundos mientras está en una pantalla
+// relacionada con la escala.
+setInterval(async()=>{
+  if(S.role!=='vol') return;
+  const pg=document.querySelector('.pg.on');
+  if(!pg || !['pg-me','pg-escala-mes'].includes(pg.id)) return;
+  try{
+    await ld();
+    if(pg.id==='pg-me') renderMe();
+    if(pg.id==='pg-escala-mes') renderEscalasMes();
+  }catch(e){ console.warn('Actualización automática:',e); }
+},30000);
 
 // ── SERVICE WORKER (PWA) ──
 if('serviceWorker' in navigator){
